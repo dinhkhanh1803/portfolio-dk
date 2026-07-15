@@ -10,15 +10,12 @@ import {
   ChevronRight,
   Code2,
   Database,
-  Facebook,
   Gamepad2,
   Globe2,
   Layers3,
-  Mail,
   MapPin,
   Menu,
   Palette,
-  Phone,
   Quote,
   Rocket,
   Smartphone,
@@ -28,6 +25,12 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import ContactSection from "./contact-section";
+import {
+  PROJECT_FILTERS,
+  filterProjects,
+  type ProjectFilter,
+} from "./project-filter";
 
 type Language = "vi" | "en";
 
@@ -61,24 +64,28 @@ const copy = {
     projects: [
       {
         category: "E-commerce Platform",
+        filter: "web",
         title: "Heritage Ginseng",
         text: "Hệ thống bán hàng đa vai trò với CMS, quản lý sản phẩm, mã giảm giá, bài viết và dashboard vận hành.",
         tags: ["Next.js", "NestJS", "PostgreSQL"],
       },
       {
         category: "Marketplace",
+        filter: "web",
         title: "Electronics Commerce",
         text: "Nền tảng thương mại điện tử cho khách hàng, người bán và quản trị viên, tích hợp thanh toán và OAuth.",
         tags: ["React", "Express", "MongoDB"],
       },
       {
         category: "Game Development",
+        filter: "game",
         title: "Ocean Quest",
         text: "Trải nghiệm puzzle casual với hệ thống level, gameplay mượt và bộ khung có thể mở rộng cho nhiều nội dung.",
         tags: ["Unity", "C#", "Game Design"],
       },
       {
         category: "Mobile & Dashboard",
+        filter: "mobile",
         title: "Booking Platform",
         text: "Ứng dụng đặt lịch cho khách hàng, đối tác và quản trị viên với luồng nghiệp vụ rõ ràng trên nhiều nền tảng.",
         tags: ["React Native", "Next.js", "Prisma"],
@@ -171,24 +178,28 @@ const copy = {
     projects: [
       {
         category: "E-commerce Platform",
+        filter: "web",
         title: "Heritage Ginseng",
         text: "A multi-role commerce platform with CMS, product management, coupons, editorial content and an operations dashboard.",
         tags: ["Next.js", "NestJS", "PostgreSQL"],
       },
       {
         category: "Marketplace",
+        filter: "web",
         title: "Electronics Commerce",
         text: "An e-commerce platform for customers, sellers and administrators with payment and OAuth integrations.",
         tags: ["React", "Express", "MongoDB"],
       },
       {
         category: "Game Development",
+        filter: "game",
         title: "Ocean Quest",
         text: "A casual puzzle experience with a level system, smooth gameplay and a framework designed for ongoing content.",
         tags: ["Unity", "C#", "Game Design"],
       },
       {
         category: "Mobile & Dashboard",
+        filter: "mobile",
         title: "Booking Platform",
         text: "A multi-platform booking product for customers, partners and administrators with clear operational workflows.",
         tags: ["React Native", "Next.js", "Prisma"],
@@ -257,6 +268,10 @@ const copy = {
 const navIds = ["about", "services", "projects", "reviews", "contact"];
 const serviceIcons = [Globe2, Smartphone, Gamepad2, Palette];
 const projectIcons = [Layers3, Code2, Gamepad2, Smartphone];
+const projectFilterLabels = {
+  vi: { all: "Tất cả", web: "Web", mobile: "Mobile", game: "Game" },
+  en: { all: "All", web: "Web", mobile: "Mobile", game: "Game" },
+} as const;
 const skillIcons = [Code2, Database, Gamepad2, Wrench];
 
 function ProductCollage() {
@@ -280,10 +295,12 @@ function ProductCollage() {
       }}
     >
       <div className="collage-brand glass-panel">
-        <div className="mini-mark">DK</div>
+        <div className="mini-mark">
+          <Layers3 size={25} strokeWidth={1.8} aria-hidden="true" />
+        </div>
         <div>
-          <strong>Trần Đình Khánh</strong>
-          <span>Developer & Digital Maker</span>
+          <strong>Product Lab</strong>
+          <span>Design · Build · Launch</span>
         </div>
       </div>
 
@@ -354,8 +371,13 @@ export default function Home() {
   const [roleIndex, setRoleIndex] = useState(0);
   const [typedRole, setTypedRole] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeProjectFilter, setActiveProjectFilter] = useState<ProjectFilter>("all");
   const t = copy[language];
   const activeRole = t.typingRoles[roleIndex % t.typingRoles.length];
+  const visibleProjects = filterProjects(
+    t.projects.map((project, visualIndex) => ({ ...project, visualIndex })),
+    activeProjectFilter,
+  );
 
   const closeMenu = () => setMenuOpen(false);
   const changeLanguage = (nextLanguage: Language) => {
@@ -403,14 +425,14 @@ export default function Home() {
   }, [activeRole, isDeleting, t.typingRoles, typedRole]);
 
   return (
-    <main>
+    <main className={`lang-${language}`} lang={language}>
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
 
       <header className="site-header glass-panel">
         <a className="brand" href="#top" aria-label="Trần Đình Khánh — home">
           <span className="brand-mark">DK</span>
-          <span className="brand-name">Trần Đình Khánh</span>
+          <span className="brand-name">DK DEV</span>
         </a>
 
         <nav className={menuOpen ? "nav-links is-open" : "nav-links"} aria-label="Main navigation">
@@ -445,7 +467,7 @@ export default function Home() {
             <p className="hero-location"><MapPin size={16} />{t.location}</p>
           </div>
           <p className="hero-role">
-            <span>{t.typingPrefix}</span>
+            <span className="mr-1">{t.typingPrefix}</span>
             <strong aria-live="polite">{typedRole}</strong>
             <i className="typing-cursor" aria-hidden="true" />
           </p>
@@ -484,11 +506,28 @@ export default function Home() {
           <p>{t.workIntro}</p>
         </div>
 
+        <div
+          className="project-filters"
+          aria-label={language === "vi" ? "Lọc dự án" : "Filter projects"}
+        >
+          {PROJECT_FILTERS.map((filter) => (
+            <button
+              className={activeProjectFilter === filter ? "is-active" : ""}
+              type="button"
+              aria-pressed={activeProjectFilter === filter}
+              onClick={() => setActiveProjectFilter(filter)}
+              key={filter}
+            >
+              {projectFilterLabels[language][filter]}
+            </button>
+          ))}
+        </div>
+
         <div className="projects-grid">
-          {t.projects.map((project, index) => {
-            const Icon = projectIcons[index];
+          {visibleProjects.map((project) => {
+            const Icon = projectIcons[project.visualIndex];
             return (
-              <article className={`project-card project-${index + 1} glass-panel`} key={project.title}>
+              <article className={`project-card project-${project.visualIndex + 1} glass-panel`} key={project.title}>
                 <div className="project-visual">
                   <div className="project-orbit orbit-one" />
                   <div className="project-orbit orbit-two" />
@@ -580,32 +619,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="contact-section section-shell" id="contact">
-        <div className="contact-card glass-panel">
-          <div className="contact-copy">
-            <div className="section-label"><Sparkles size={16} />{t.contactLabel}</div>
-            <h2>{t.contactTitle}</h2>
-            <p>{t.contactIntro}</p>
-            <a className="button button-primary contact-button" href="mailto:trandinhkhanh0318@gmail.com?subject=Trao%20đổi%20dự%20án%20freelance">
-              {t.sendEmail}<ArrowRight size={19} />
-            </a>
-          </div>
-          <div className="contact-list">
-            <a href="mailto:trandinhkhanh0318@gmail.com">
-              <span><Mail /></span><div><small>{t.emailLabel}</small><strong>trandinhkhanh0318@gmail.com</strong></div><ArrowDownRight />
-            </a>
-            <a href="tel:+84915368545">
-              <span><Phone /></span><div><small>{t.phoneLabel}</small><strong>0915 368 545</strong></div><ArrowDownRight />
-            </a>
-            <a href="https://www.facebook.com/trandinhkhanh2002" target="_blank" rel="noreferrer">
-              <span><Facebook /></span><div><small>{t.facebookLabel}</small><strong>Trần Đình Khánh</strong></div><ArrowDownRight />
-            </a>
-            <div className="contact-location">
-              <span><MapPin /></span><div><small>{t.locationLabel}</small><strong>{t.location}</strong></div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ContactSection language={language} />
 
       <footer className="site-footer section-shell">
         <a className="brand" href="#top"><span className="brand-mark">DK</span><span>{t.footer}</span></a>
