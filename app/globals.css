@@ -1220,6 +1220,22 @@ body:has(.home-main) .portfolio-footer {
   }
 }
 
+/* Keep the complete hero visible on laptops and scaled desktop displays.
+   Width-only breakpoints made the 590px collage overflow short viewports. */
+@media (min-width: 941px) and (max-height: 850px) {
+  body .site-header { height: 64px; min-height: 64px; margin-top: 14px; }
+  body .site-header .brand-mark { width: 44px; height: 44px; border-radius: 14px; }
+  .home-main .hero { min-height: 520px; margin-top: 18px; }
+  .home-main .hero-copy { padding-top: 6px; padding-bottom: 12px; }
+  .home-main .hero-role { margin-top: 22px; }
+  .home-main .hero h1 { margin: 10px 0 14px; font-size: clamp(48px, 4.7vw, 68px); }
+  .home-main .hero-intro { font-size: 14px; line-height: 1.55; }
+  .home-main .hero-actions { margin-top: 20px; }
+  .home-main .button { min-height: 50px; }
+  .home-main .product-collage { min-height: 520px; }
+  .home-main .service-rail { margin-top: 14px; }
+}
+
 /* Shared header copied from main; content and final action are portfolio-specific. */
 .site-header {
   width: min(1380px, calc(100% - 48px));
@@ -1508,3 +1524,6 @@ html:not([data-theme="dark"]) body {
 [data-theme="dark"] .home-main .metric-grid>div,
 [data-theme="dark"] .home-main .chart-area,
 [data-theme="dark"] .home-main .task-line { background:rgba(255,255,255,.055); border-color:rgba(255,255,255,.08); }
+/* Desktop home stays within one viewport; mobile keeps natural scrolling. */
+@media (min-width:941px){html:has(.home-main),body:has(.home-main){height:100%;overflow:hidden}.home-main.about-main{height:calc(100dvh - 110px);min-height:0;padding:16px 0 12px;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:14px;overflow:hidden}.home-main .hero{height:100%;min-height:0;margin:0 auto}.home-main .hero-copy{max-height:100%;padding-top:0;padding-bottom:0}.home-main .hero-visual,.home-main .product-collage{height:100%;min-height:0}.home-main .service-rail{margin:0 auto}.home-main .service-card{min-height:clamp(108px,13.5dvh,126px);padding-block:clamp(14px,2dvh,20px)}}
+@media (min-width:941px) and (max-height:760px){body .site-header{height:58px;min-height:58px;margin-top:10px}.home-main.about-main{height:calc(100dvh - 78px);padding-top:10px;gap:10px}.home-main .hero-meta{gap:8px}.home-main .hero-role{margin-top:14px}.home-main .hero h1{margin:6px 0 10px;font-size:clamp(43px,4.3vw,60px)}.home-main .hero-actions{margin-top:14px}.home-main .service-card p{display:block;font-size:10px;line-height:1.3}}

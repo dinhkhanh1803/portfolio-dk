@@ -46,16 +46,16 @@ const heroCopy = {
 
 const services = {
   vi: [
-    { title: "Web", description: "Website hiện đại, tối ưu trải nghiệm và hiệu suất.", href: "/projects", icon: Globe2 },
-    { title: "App", description: "Ứng dụng ổn định, dễ dùng và sẵn sàng mở rộng.", href: "/projects", icon: Smartphone },
-    { title: "Game", description: "Gameplay gọn, mượt mà và có chiều sâu kỹ thuật.", href: "/playground", icon: Gamepad2 },
-    { title: "Design", description: "Giao diện rõ ràng, đồng nhất và đúng tinh thần sản phẩm.", href: "/blog", icon: Palette },
+    { title: "Web", description: "Website hiện đại, tối ưu trải nghiệm và hiệu suất.", href: "/projects?category=Web", icon: Globe2 },
+    { title: "App", description: "Ứng dụng ổn định, dễ dùng và sẵn sàng mở rộng.", href: "/projects?category=App", icon: Smartphone },
+    { title: "Game", description: "Gameplay gọn, mượt mà và có chiều sâu kỹ thuật.", href: "/projects?category=Game", icon: Gamepad2 },
+    { title: "Design", description: "Giao diện rõ ràng, đồng nhất và đúng tinh thần sản phẩm.", href: "/projects?category=Design", icon: Palette },
   ],
   en: [
-    { title: "Web", description: "Modern websites tuned for experience and performance.", href: "/projects", icon: Globe2 },
-    { title: "App", description: "Stable, usable apps that are ready to grow.", href: "/projects", icon: Smartphone },
-    { title: "Game", description: "Compact, smooth gameplay with technical depth.", href: "/playground", icon: Gamepad2 },
-    { title: "Design", description: "Clear, consistent interfaces with product character.", href: "/blog", icon: Palette },
+    { title: "Web", description: "Modern websites tuned for experience and performance.", href: "/projects?category=Web", icon: Globe2 },
+    { title: "App", description: "Stable, usable apps that are ready to grow.", href: "/projects?category=App", icon: Smartphone },
+    { title: "Game", description: "Compact, smooth gameplay with technical depth.", href: "/projects?category=Game", icon: Gamepad2 },
+    { title: "Design", description: "Clear, consistent interfaces with product character.", href: "/projects?category=Design", icon: Palette },
   ],
 } as const;
 

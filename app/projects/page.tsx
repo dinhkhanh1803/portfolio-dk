@@ -2,11 +2,16 @@
 
 import { ArrowUpRight, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useLanguage } from "../language-provider";
 import { portfolio } from "../portfolio-data";
 
 const ALL = "all";
+const subscribeToLocation = (notify: () => void) => {
+  window.addEventListener("popstate", notify);
+  return () => window.removeEventListener("popstate", notify);
+};
+const categoryFromLocation = () => new URLSearchParams(window.location.search).get("category") ?? ALL;
 
 const copy = {
   vi: {
@@ -56,8 +61,11 @@ export default function ProjectsPage() {
   const t = copy[language];
   const projects = portfolio[language].projects;
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState(ALL);
+  const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const categories = useMemo(() => [ALL, ...Array.from(new Set(projects.map((project) => project.category)))], [projects]);
+
+  const requestedCategory = useSyncExternalStore(subscribeToLocation, categoryFromLocation, () => ALL);
+  const activeCategory = categoryOverride ?? (categories.includes(requestedCategory) ? requestedCategory : ALL);
 
   const filteredProjects = useMemo(() => {
     const needle = normalize(query.trim());
@@ -70,7 +78,7 @@ export default function ProjectsPage() {
 
   const clearFilters = () => {
     setQuery("");
-    setActiveCategory(ALL);
+    setCategoryOverride(ALL);
   };
 
   return (
@@ -91,7 +99,7 @@ export default function ProjectsPage() {
                 className={`project-filter ${activeCategory === category ? "is-active" : ""}`}
                 type="button"
                 aria-pressed={activeCategory === category}
-                onClick={() => setActiveCategory(category)}
+                onClick={() => setCategoryOverride(category)}
               >
                 {category === ALL ? t.all : category}
               </button>
