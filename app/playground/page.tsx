@@ -1,0 +1,3 @@
+"use client";
+import { ItemCards } from "../content-cards"; import { useLanguage } from "../language-provider"; import { portfolio } from "../portfolio-data";
+export default function PlaygroundPage() { const { language } = useLanguage(); return <main className="route-page"><p className="eyebrow">Experiments</p><h1>{language === "vi" ? "Góc thử nghiệm" : "Playground"}</h1><p className="page-lead">{language === "vi" ? "Không gian cho game nhỏ, tương tác và những ý tưởng đang thử." : "A space for small games, interactions and ideas in motion."}</p><ItemCards items={portfolio[language].playground} /></main>; }

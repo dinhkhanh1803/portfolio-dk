@@ -1,0 +1,6 @@
+"use client";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Language } from "./portfolio-data";
+const Context = createContext<{ language: Language; setLanguage: (next: Language) => void } | null>(null);
+export function LanguageProvider({ children }: { children: ReactNode }) { const [language, setLanguage] = useState<Language>("vi"); useEffect(() => { const saved = sessionStorage.getItem("portfolio-language"); if (saved === "vi" || saved === "en") setLanguage(saved); }, []); const change = (next: Language) => { sessionStorage.setItem("portfolio-language", next); setLanguage(next); }; return <Context value={{ language, setLanguage: change }}>{children}</Context>; }
+export function useLanguage() { const value = useContext(Context); if (!value) throw new Error("useLanguage must be used inside LanguageProvider"); return value; }

@@ -1,0 +1,3 @@
+"use client";
+import { ItemCards } from "../content-cards"; import { useLanguage } from "../language-provider"; import { portfolio } from "../portfolio-data";
+export default function BlogPage() { const { language } = useLanguage(); return <main className="route-page"><p className="eyebrow">Writing</p><h1>{language === "vi" ? "Bài viết & ghi chú" : "Writing & notes"}</h1><p className="page-lead">{language === "vi" ? "Tài liệu, bài học và các quyết định khi xây sản phẩm." : "Documentation, lessons and decisions from building products."}</p><ItemCards items={portfolio[language].posts} /></main>; }

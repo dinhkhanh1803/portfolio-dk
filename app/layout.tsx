@@ -1,59 +1,11 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro, Manrope, Sora } from "next/font/google";
 import "./globals.css";
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin", "vietnamese"],
-});
-
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin", "latin-ext"],
-});
-
-const beVietnamPro = Be_Vietnam_Pro({
-  variable: "--font-vietnamese",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
-
-export const metadata: Metadata = {
-  title: "Trần Đình Khánh | Freelance Developer & Digital Maker",
-  description:
-    "Portfolio của Trần Đình Khánh — phát triển website, ứng dụng, game và thiết kế sản phẩm số tại Đà Nẵng.",
-  keywords: [
-    "Trần Đình Khánh",
-    "freelance developer Đà Nẵng",
-    "web developer",
-    "app developer",
-    "game developer",
-  ],
-  authors: [{ name: "Trần Đình Khánh" }],
-  openGraph: {
-    title: "Trần Đình Khánh | Freelance Developer",
-    description: "Web, app, game và trải nghiệm số được thiết kế để chạy thật.",
-    type: "website",
-    locale: "vi_VN",
-  },
-  icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-  },
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="vi">
-      <body
-        className={`${manrope.variable} ${sora.variable} ${beVietnamPro.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
-  );
-}
+import { LanguageProvider } from "./language-provider";
+import SiteHeader from "./site-header";
+import SiteFooter from "./site-footer";
+const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin", "vietnamese"] });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin", "latin-ext"] });
+const beVietnamPro = Be_Vietnam_Pro({ variable: "--font-vietnamese", subsets: ["latin", "vietnamese"], weight: ["400", "500", "600", "700", "800", "900"] });
+export const metadata: Metadata = { title: "Trần Đình Khánh | Full-stack Developer", description: "Personal portfolio of Tran Dinh Khanh, a Full-stack Developer building useful digital products.", authors: [{ name: "Trần Đình Khánh" }], icons: { icon: "/favicon.svg" } };
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="vi"><body className={`${manrope.variable} ${sora.variable} ${beVietnamPro.variable} antialiased`}><LanguageProvider><SiteHeader />{children}<SiteFooter /></LanguageProvider></body></html>; }

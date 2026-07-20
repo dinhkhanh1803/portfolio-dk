@@ -1,0 +1,7 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import test from "node:test";
+test("portfolio data covers all bilingual areas", async () => { const { portfolio, siteNav } = await import(pathToFileURL(resolve("app/portfolio-data.ts")).href); assert.deepEqual(siteNav.map((item) => item.href), ["/about", "/projects", "/tools", "/playground", "/blog"]); for (const language of ["vi", "en"]) { assert.equal(portfolio[language].profile.role, "Full-stack Developer"); assert.ok(portfolio[language].projects.length >= 3); assert.ok(portfolio[language].tools.length); assert.ok(portfolio[language].playground.length); assert.ok(portfolio[language].posts.length); } });
+test("personal portfolio routes and shared shell exist", () => { for (const path of ["app/site-header.tsx", "app/site-footer.tsx", "app/language-provider.tsx", "app/projects/page.tsx", "app/tools/page.tsx", "app/playground/page.tsx", "app/blog/page.tsx", "app/about/page.tsx", "app/contact/page.tsx"]) assert.ok(existsSync(resolve(path)), path); const home = readFileSync(resolve("app/page.tsx"), "utf8"); const header = readFileSync(resolve("app/site-header.tsx"), "utf8"); const provider = readFileSync(resolve("app/language-provider.tsx"), "utf8"); assert.match(home, /Full-stack Developer/); assert.doesNotMatch(home, /Freelance|Client reviews|Estimated budget/); assert.match(header, /aria-pressed/); assert.match(header, /aria-expanded/); assert.match(provider, /sessionStorage/); });
