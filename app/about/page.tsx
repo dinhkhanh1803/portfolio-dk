@@ -1,3 +1,5 @@
-"use client";
-import { useLanguage } from "../language-provider"; import { portfolio } from "../portfolio-data";
-export default function AboutPage() { const { language } = useLanguage(); const t = portfolio[language]; return <main className="route-page"><p className="eyebrow">{language === "vi" ? "Con người phía sau sản phẩm" : "The person behind the products"}</p><h1>{language === "vi" ? "Giới thiệu" : "About"}</h1><p className="page-lead">{t.profile.summary}</p><section className="page-section"><div className="skill-strip">{t.profile.skills.map((skill) => <article key={skill.title}><h3>{skill.title}</h3><p>{skill.items.join(" · ")}</p></article>)}</div></section><section><p className="eyebrow">{language === "vi" ? "Cách tôi làm việc" : "How I work"}</p><div className="content-grid compact-grid">{t.profile.values.map((value, index) => <article className="content-card" key={value}><p className="card-category">0{index + 1}</p><h3>{value}</h3></article>)}</div></section></main>; }
+import { redirect } from "next/navigation";
+
+export default function AboutPage() {
+  redirect("/");
+}
