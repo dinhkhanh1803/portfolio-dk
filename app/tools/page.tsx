@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "../language-provider";
 import EncodingWorkbench from "./encoding-workbench";
 import DataFormatWorkbench from "./data-format-workbench";
+import CryptoWorkbench from "./crypto-workbench";
 
 type ToolCollection = {
   id: string;
@@ -208,7 +209,7 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
             <h1>{activeCollection.label}</h1>
             <p>{language === "vi" ? `Bộ ${activeCollection.tools.length} tiện ích ${activeCollection.label.toLowerCase()} chạy trực tiếp trong trình duyệt.` : `${activeCollection.tools.length} focused ${activeCollection.label.toLowerCase()} that run directly in your browser.`}</p>
           </header>
-          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : <section className="tool-workspace">
+          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : <section className="tool-workspace">
             <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={activeTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
             <div className="tool-runner">
               <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${activeTool}...`} /></label>

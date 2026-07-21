@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { decodeBase32, decodeBase64, decodeBinary, decodeBytes, decodeDataUri, decodeHtml, encodeBase32, encodeBase64, encodeBinary, encodeBytes, encodeDataUri, encodeHtml } from "../app/tools/encoding-engine.ts";
 
 test("Base64 handles Unicode and URL-safe output", () => {
@@ -40,4 +42,20 @@ test("byte converter supports binary, hex, decimal, Base64 and separators", () =
   }
   assert.equal(encodeBytes("AB", "hex", ""), "4142");
   assert.equal(decodeBytes("4142", "hex"), "AB");
+});
+
+test("Encoding workbench seeds raw sample input for every mode", () => {
+  const workbench = readFileSync(resolve("app/tools/encoding-workbench.tsx"), "utf8");
+  assert.match(workbench, /useState<EncodingKind>\(tabs\[0\]!\.id\)/);
+  assert.match(workbench, /useState\(tabs\[0\]!\.sample\)/);
+  assert.match(workbench, /const nextTab = tabs\.find\(\(tab\) => tab\.id === next\)!;/);
+  assert.match(workbench, /setInput\(nextTab\.sample\)/);
+  assert.match(workbench, /setInput\(active\.sample\)/);
+});
+
+test("Encoding and crypto detail layouts share compact workbench contracts", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /\.tools-main\.is-detail \.(?:encoding|crypto)-tabs\{[^}]*flex-wrap:wrap/);
+  assert.match(css, /\.tools-main\.is-detail \.(?:encoding|crypto)-workbench\{[^}]*gap:7px/);
+  assert.match(css, /\.tools-main\.is-detail \.(?:encoding|crypto)-editor textarea\{[^}]*height:clamp\(150px,24dvh,210px\)/);
 });

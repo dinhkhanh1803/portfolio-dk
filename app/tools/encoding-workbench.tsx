@@ -1,98 +1,80 @@
 "use client";
 
-import { ArrowLeftRight, Check, Clipboard, Download, Eraser, FlaskConical, Play, UploadCloud } from "lucide-react";
+import { ArrowLeftRight, Check, Clipboard, Download, Eraser, FileUp, FlaskConical, Play } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { type ByteEncoding, type EncodingDirection, type EncodingKind, decodeBytes, encodeBytes, transformEncoding } from "./encoding-engine";
 
 const tabs: { id: EncodingKind; label: string; hint: string; sample: string }[] = [
-  { id: "base64", label: "Base64", hint: "Chuyển văn bản Unicode sang Base64 an toàn.", sample: "Xin chào DK Coder 👋" },
-  { id: "base32", label: "Base32", hint: "Mã hóa và giải mã Base32 theo RFC 4648.", sample: "DK Tools chuẩn RFC 4648" },
-  { id: "url", label: "URL", hint: "Mã hóa thành phần URL theo chuẩn URI.", sample: "https://dkcoder.vn/tim-kiem?q=công cụ" },
-  { id: "html", label: "HTML Entities", hint: "Bảo vệ ký tự đặc biệt khi nhúng vào HTML.", sample: '<button aria-label="Mở">Tools & Apps</button>' },
-  { id: "binary", label: "Text / Binary", hint: "Chuyển văn bản UTF-8 sang Binary, Hex, Decimal hoặc Base64.", sample: "DK ✓" },
-  { id: "data-uri", label: "Data URL", hint: "Đóng gói file để nhúng trực tiếp vào HTML, CSS hoặc JavaScript.", sample: "Hello from DK Tools!" },
+  { id: "base64", label: "Base64", hint: "Encode Unicode text to Base64 and decode it back safely.", sample: "Xin chao DK Coder" },
+  { id: "base32", label: "Base32", hint: "Encode and decode RFC 4648 Base32 text.", sample: "DK Tools RFC 4648" },
+  { id: "url", label: "URL", hint: "Encode URL components or decode percent-encoded values.", sample: "https://dkcoder.vn/search?q=tools demo" },
+  { id: "html", label: "HTML Entities", hint: "Escape special characters before embedding text in HTML.", sample: '<button aria-label="Open">Tools & Apps</button>' },
+  { id: "binary", label: "Text / Binary", hint: "Convert UTF-8 text to binary, hex, decimal, or Base64 bytes.", sample: "DK ok" },
+  { id: "data-uri", label: "Data URL", hint: "Create or decode embeddable data: URLs from raw text or uploaded files.", sample: "Hello from DK Tools!" },
 ];
 const separators = { space: " ", newline: "\n", none: "" } as const;
 
 export default function EncodingWorkbench() {
-  const [kind, setKind] = useState<EncodingKind>("base64");
+  const [kind, setKind] = useState<EncodingKind>(tabs[0]!.id);
   const [direction, setDirection] = useState<EncodingDirection>("encode");
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(tabs[0]!.sample);
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [urlSafe, setUrlSafe] = useState(false);
   const [byteEncoding, setByteEncoding] = useState<ByteEncoding>("binary");
   const [separator, setSeparator] = useState<keyof typeof separators>("space");
-  const [fileName, setFileName] = useState("");
-  const [mime, setMime] = useState("");
+  const [mime, setMime] = useState("text/plain;charset=utf-8");
+  const [dataUriBase64, setDataUriBase64] = useState(true);
   const [copied, setCopied] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const active = tabs.find((tab) => tab.id === kind)!;
   const inputBytes = useMemo(() => new TextEncoder().encode(input).length, [input]);
   const outputBytes = useMemo(() => new TextEncoder().encode(output).length, [output]);
 
+  const resetOutput = () => { setOutput(""); setError(""); setCopied(""); };
+  const clear = () => { setInput(active.sample); resetOutput(); };
+  const sample = () => { setInput(active.sample); resetOutput(); };
+  const changeKind = (next: EncodingKind) => { const nextTab = tabs.find((tab) => tab.id === next)!; setKind(next); setInput(nextTab.sample); setOutput(""); setError(""); setCopied(""); setDirection("encode"); };
+
   const run = () => {
     try {
       const result = kind === "binary"
         ? direction === "encode" ? encodeBytes(input, byteEncoding, separators[separator]) : decodeBytes(input, byteEncoding)
-        : transformEncoding(kind, direction, input, { urlSafe });
-      setOutput(result); setError("");
+        : transformEncoding(kind, direction, input, { urlSafe, mime, dataUriBase64 });
+      setOutput(result); setError(""); setCopied("");
     } catch (reason) {
-      setOutput(""); setError(reason instanceof Error ? reason.message : "Không thể xử lý dữ liệu.");
+      setOutput(""); setError(reason instanceof Error ? reason.message : "Unable to process this input.");
     }
   };
-  const changeKind = (next: EncodingKind) => { setKind(next); setInput(""); setOutput(""); setFileName(""); setError(""); setDirection("encode"); };
-  const copyText = async (value: string, id = "output") => { if (!value) return; await navigator.clipboard.writeText(value); setCopied(id); window.setTimeout(() => setCopied(""), 1400); };
-  const download = () => { if (!output) return; const url = URL.createObjectURL(new Blob([output], { type: "text/plain;charset=utf-8" })); const link = document.createElement("a"); link.href = url; link.download = kind + "-result.txt"; link.click(); URL.revokeObjectURL(url); };
+
   const loadFile = (file?: File) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setError("File vượt quá giới hạn 5 MB."); return; }
+    if (file.size > 5 * 1024 * 1024) { setError("File is larger than the 5 MB limit."); return; }
     const reader = new FileReader();
-    reader.onload = () => { setOutput(String(reader.result ?? "")); setInput(file.name); setFileName(file.name); setMime(file.type || "application/octet-stream"); setError(""); };
-    reader.onerror = () => setError("Không thể đọc file này.");
+    reader.onload = () => { setInput(String(reader.result ?? "")); setMime(file.type || "application/octet-stream"); setOutput(""); setError(""); setDirection("decode"); };
+    reader.onerror = () => setError("Unable to read this file.");
     reader.readAsDataURL(file);
   };
-  const snippets = output ? {
-    HTML: '<img src="' + output + '" alt="' + (fileName || "Embedded asset") + '">',
-    CSS: 'background-image: url("' + output + '");',
-    JavaScript: 'const asset = "' + output + '";',
-  } : null;
+  const copyText = async (value: string, id = "output") => { if (!value) return; await navigator.clipboard.writeText(value); setCopied(id); window.setTimeout(() => setCopied(""), 1400); };
+  const download = () => { if (!output) return; const url = URL.createObjectURL(new Blob([output], { type: "text/plain;charset=utf-8" })); const link = document.createElement("a"); link.href = url; link.download = kind + "-result.txt"; link.click(); URL.revokeObjectURL(url); };
 
   return <section className={"encoding-workbench " + (kind === "data-uri" ? "is-data-uri" : "")}>
     <div className="encoding-tabs" role="tablist">{tabs.map((tab) => <button role="tab" aria-selected={kind === tab.id} className={kind === tab.id ? "is-active" : ""} onClick={() => changeKind(tab.id)} key={tab.id}>{tab.label}</button>)}</div>
     <div className="encoding-intro">
-      <div><span>Encoding lab</span><h2>{kind === "data-uri" ? "Data URL Generator" : active.label + " Encoder / Decoder"}</h2><p>{active.hint} Mọi xử lý diễn ra ngay trên thiết bị.</p></div>
-      {kind !== "data-uri" && <div className="encoding-direction"><button className={direction === "encode" ? "is-active" : ""} onClick={() => setDirection("encode")}>Encode</button><button className={direction === "decode" ? "is-active" : ""} onClick={() => setDirection("decode")}>Decode</button></div>}
+      <div><span>Encoding lab</span><h2>{kind === "data-uri" ? "Data URL Encoder / Decoder" : active.label + " Encoder / Decoder"}</h2><p>{active.hint} All processing stays local in your browser.</p></div>
+      <div className="encoding-direction"><button className={direction === "encode" ? "is-active" : ""} onClick={() => { setDirection("encode"); resetOutput(); }}>Encode</button><button className={direction === "decode" ? "is-active" : ""} onClick={() => { setDirection("decode"); resetOutput(); }}>Decode</button></div>
     </div>
-
-    {kind === "data-uri" ? <>
-      <label className={"data-url-dropzone " + (fileName ? "has-file" : "")} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); loadFile(event.dataTransfer.files[0]); }}>
-        <span className="data-url-upload-icon"><UploadCloud size={30}/></span>
-        <span className="data-url-upload-copy">
-          <strong>{fileName || "Kéo và thả file vào đây"}</strong>
-          <small>{fileName ? mime + " · Data URL đã sẵn sàng" : "PNG, JPG, SVG, font, tài liệu và các định dạng khác · tối đa 5 MB"}</small>
-        </span>
-        <span className="data-url-browse">{fileName ? "Chọn file khác" : "Chọn file"}</span>
-        <input ref={fileInput} type="file" onChange={(event) => loadFile(event.target.files?.[0])}/>
-      </label>
-      {output && <div className="data-url-result"><div><strong>Data URL</strong><span>{output.length.toLocaleString()} ký tự</span><button onClick={() => copyText(output)}>{copied === "output" ? <Check size={14}/> : <Clipboard size={14}/>} Sao chép</button></div><textarea readOnly value={output}/></div>}
-      {snippets && <div className="data-url-snippets">{Object.entries(snippets).map(([label, value]) => <div key={label}><span>{label}</span><code>{value}</code><button onClick={() => copyText(value, label)}>{copied === label ? <Check size={14}/> : <Clipboard size={14}/>}</button></div>)}</div>}
-    </> : <>
-      <div className="encoding-options">
-        {kind === "base64" && <label><input type="checkbox" checked={urlSafe} onChange={(event) => setUrlSafe(event.target.checked)} /> URL-safe Base64</label>}
-        {kind === "binary" && <>
-          <label>Định dạng <select value={byteEncoding} onChange={(event) => setByteEncoding(event.target.value as ByteEncoding)}><option value="binary">Binary</option><option value="hex">Hex</option><option value="decimal">Decimal</option><option value="base64">Base64</option></select></label>
-          {direction === "encode" && byteEncoding !== "base64" && <label>Phân cách <select value={separator} onChange={(event) => setSeparator(event.target.value as keyof typeof separators)}><option value="space">Khoảng trắng</option><option value="newline">Xuống dòng</option><option value="none">Không có</option></select></label>}
-        </>}
-        <button onClick={() => { setInput(active.sample); setOutput(""); }}><FlaskConical size={15}/> Dữ liệu mẫu</button>
-        <button onClick={() => { setInput(""); setOutput(""); setError(""); }}><Eraser size={15}/> Xóa</button>
-      </div>
-      <div className="encoding-editor-grid">
-        <label className="encoding-editor"><span><b>Input</b><small>{input.length} ký tự · {inputBytes} bytes</small></span><textarea spellCheck={false} value={input} onChange={(event) => setInput(event.target.value)} placeholder={direction === "encode" ? "Nhập nội dung cần mã hóa…" : "Dán " + active.label + " cần giải mã…"} /></label>
-        <div className="encoding-actions"><button className="is-primary" onClick={run}><Play size={16}/> {direction === "encode" ? "Encode" : "Decode"}</button><button disabled={!output} onClick={() => { setInput(output); setOutput(input); setDirection(direction === "encode" ? "decode" : "encode"); setError(""); }}><ArrowLeftRight size={16}/> Swap</button></div>
-        <label className="encoding-editor"><span><b>Output</b><small>{output.length} ký tự · {outputBytes} bytes</small></span><textarea spellCheck={false} value={output} readOnly placeholder="Kết quả sẽ xuất hiện ở đây…" /><div className="encoding-output-actions"><button type="button" disabled={!output} onClick={() => copyText(output)}>{copied === "output" ? <Check size={15}/> : <Clipboard size={15}/>} {copied === "output" ? "Đã sao chép" : "Sao chép"}</button><button type="button" disabled={!output} onClick={download}><Download size={15}/> Tải .txt</button></div></label>
-      </div>
-    </>}
+    <div className="encoding-options">
+      {kind === "base64" && <label><input type="checkbox" checked={urlSafe} onChange={(event) => { setUrlSafe(event.target.checked); resetOutput(); }} /> URL-safe Base64</label>}
+      {kind === "binary" && <><label>Format <select value={byteEncoding} onChange={(event) => { setByteEncoding(event.target.value as ByteEncoding); resetOutput(); }}><option value="binary">Binary</option><option value="hex">Hex</option><option value="decimal">Decimal</option><option value="base64">Base64</option></select></label>{direction === "encode" && byteEncoding !== "base64" && <label>Separator <select value={separator} onChange={(event) => { setSeparator(event.target.value as keyof typeof separators); resetOutput(); }}><option value="space">Space</option><option value="newline">New line</option><option value="none">None</option></select></label>}</>}
+      {kind === "data-uri" && <><label>MIME <input value={mime} onChange={(event) => { setMime(event.target.value); resetOutput(); }} /></label><label><input type="checkbox" checked={dataUriBase64} onChange={(event) => { setDataUriBase64(event.target.checked); resetOutput(); }} /> Base64 payload</label><button onClick={() => fileInput.current?.click()}><FileUp size={15} />Upload file</button><input ref={fileInput} className="encoding-file-input" type="file" onChange={(event) => loadFile(event.target.files?.[0])} /></>}
+      <span className="encoding-option-spacer" /><button onClick={sample}><FlaskConical size={15}/> Sample</button><button onClick={clear}><Eraser size={15}/> Clear</button>
+    </div>
+    <div className="encoding-editor-grid">
+      <label className="encoding-editor"><span><b>{kind === "data-uri" && direction === "decode" ? "Data URL Input" : "Raw Input"}</b><small>{input.length} chars | {inputBytes} bytes</small></span><textarea spellCheck={false} value={input} onChange={(event) => { setInput(event.target.value); resetOutput(); }} placeholder={direction === "encode" ? "Paste or type raw text..." : "Paste encoded data..."} /></label>
+      <div className="encoding-actions"><button className="is-primary" onClick={run}><Play size={16}/> {direction === "encode" ? "Encode" : "Decode"}</button><button disabled={!output} onClick={() => { setInput(output); setOutput(input); setDirection(direction === "encode" ? "decode" : "encode"); setError(""); }}><ArrowLeftRight size={16}/> Swap</button></div>
+      <label className="encoding-editor"><span><b>{direction === "encode" ? "Encoded Output" : "Decoded Output"}</b><small>{output.length} chars | {outputBytes} bytes</small></span><textarea spellCheck={false} value={output} readOnly placeholder="Result will appear here..." /><div className="encoding-output-actions"><button type="button" disabled={!output} onClick={() => copyText(output)}>{copied === "output" ? <Check size={15}/> : <Clipboard size={15}/>} {copied === "output" ? "Copied" : "Copy"}</button><button type="button" disabled={!output} onClick={download}><Download size={15}/> Download .txt</button></div></label>
+    </div>
     {error && <p className="encoding-error" role="alert">{error}</p>}
   </section>;
 }
