@@ -14,6 +14,9 @@ import EncodingWorkbench from "./encoding-workbench";
 import DataFormatWorkbench from "./data-format-workbench";
 import CryptoWorkbench from "./crypto-workbench";
 import CodeConverterWorkbench from "./code-converter-workbench";
+import NumberToolsWorkbench from "./number-tools-workbench";
+import UnitToolsWorkbench from "./unit-tools-workbench";
+import DateTimeWorkbench from "./date-time-workbench";
 
 type ToolCollection = {
   id: string;
@@ -32,9 +35,9 @@ const groups: ToolGroup[] = [
   { id: "converters", label: "Converters", collections: [
     { id: "data-format", label: "Data Format Converters", icon: FileJson, tools: ["CSV to JSON", "JSON to CSV", "CSV to SQL", "CSV to Markdown", "YAML to JSON", "JSON to YAML", "JSON to XML", "XML to JSON", "Markdown to JSON", "Markdown to Notion"] },
     { id: "code-converters", label: "Code Converters", icon: Code2, tools: ["JSON to TypeScript", "JSON to Zod Schema", "JSON to Go Struct", "SQL to TypeScript", "HTML to JSX", "SVG to JSX", "CSS to Tailwind", "cURL to Fetch", "Docker Run to Compose", "Figma Token Converter"] },
-    { id: "number-converters", label: "Number Converters", icon: Hash, tools: ["Binary Converter", "Hex Converter", "Roman Numerals", "Big Number Formatter"] },
-    { id: "unit-converters", label: "Unit Converters", icon: Calculator, tools: ["Length", "Weight", "Temperature", "Storage", "Speed"] },
-    { id: "date-time", label: "Date & Time Tools", icon: CalendarClock, tools: ["Unix Timestamp", "Timezone Converter", "Date Difference", "Duration Formatter"] },
+    { id: "number-converters", label: "Number Converters", icon: Hash, tools: ["Number Base Converter", "Number Base Playground", "Roman Numeral Converter", "Number to Words", "IP Address Converter", "Byte Unit Converter"] },
+    { id: "unit-converters", label: "Unit Converters", icon: Calculator, tools: ["Unit Converter", "CSS Unit Converter", "Temperature Converter", "Aspect Ratio Calculator", "Number Format Explorer"] },
+    { id: "date-time", label: "Date & Time Tools", icon: CalendarClock, tools: ["Timestamp Converter", "Timezone Converter", "Duration Calculator", "Date Difference Calculator", "Date Format Explorer"] },
   ]},
   { id: "css", label: "CSS", collections: [
     { id: "color-tools", label: "Color Tools", icon: Palette, tools: ["Color Converter", "Palette Generator", "Contrast Checker", "Color Mixer"] },
@@ -210,7 +213,7 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
             <h1>{activeCollection.label}</h1>
             <p>{language === "vi" ? `Bộ ${activeCollection.tools.length} tiện ích ${activeCollection.label.toLowerCase()} chạy trực tiếp trong trình duyệt.` : `${activeCollection.tools.length} focused ${activeCollection.label.toLowerCase()} that run directly in your browser.`}</p>
           </header>
-          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : <section className="tool-workspace">
+          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : <section className="tool-workspace">
             <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={activeTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
             <div className="tool-runner">
               <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${activeTool}...`} /></label>
