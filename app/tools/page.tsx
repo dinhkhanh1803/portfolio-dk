@@ -7,7 +7,7 @@ import {
   ShieldCheck, SlidersHorizontal, Sparkles, Star, TextCursorInput, Type, WandSparkles,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../language-provider";
 import EncodingWorkbench from "./encoding-workbench";
@@ -17,6 +17,7 @@ import CodeConverterWorkbench from "./code-converter-workbench";
 import NumberToolsWorkbench from "./number-tools-workbench";
 import UnitToolsWorkbench from "./unit-tools-workbench";
 import DateTimeWorkbench from "./date-time-workbench";
+import CssToolsWorkbench from "./css-tools-workbench";
 
 type ToolCollection = {
   id: string;
@@ -40,12 +41,12 @@ const groups: ToolGroup[] = [
     { id: "date-time", label: "Date & Time Tools", icon: CalendarClock, tools: ["Timestamp Converter", "Timezone Converter", "Duration Calculator", "Date Difference Calculator", "Date Format Explorer"] },
   ]},
   { id: "css", label: "CSS", collections: [
-    { id: "color-tools", label: "Color Tools", icon: Palette, tools: ["Color Converter", "Palette Generator", "Contrast Checker", "Color Mixer"] },
-    { id: "gradients-patterns", label: "CSS Gradients & Patterns", icon: Sparkles, tools: ["Gradient Generator", "Mesh Gradient", "Pattern Generator"] },
-    { id: "shadows-effects", label: "CSS Shadows & Effects", icon: Layers3, tools: ["Box Shadow", "Text Shadow", "Glassmorphism", "Neumorphism"] },
-    { id: "layout-tools", label: "CSS Layout Tools", icon: LayoutGrid, tools: ["Grid Generator", "Flexbox Playground", "Aspect Ratio"] },
-    { id: "animations", label: "CSS Animations", icon: Zap, tools: ["Keyframe Builder", "Transition Preview", "Easing Editor"] },
-    { id: "typography", label: "CSS Typography", icon: Type, tools: ["Fluid Type Scale", "Text Stroke", "Clamp Generator"] },
+    { id: "color-tools", label: "Color Tools", icon: Palette, tools: ["Color Tools", "Color Format Converter", "Color Name Finder", "Image Color Picker", "CSS Contrast Checker", "Color Contrast Grid", "Color Palette AI", "Color Scheme Generator"] },
+    { id: "gradients-patterns", label: "CSS Gradients & Patterns", icon: Sparkles, tools: ["CSS Gradient Generator", "CSS Conic Gradient Generator", "CSS Gradient Mesh", "CSS Gradient Border Generator", "CSS Gradient Text", "CSS Background Pattern Generator", "SVG Pattern Generator", "CSS Noise Generator", "CSS Blob Generator"] },
+    { id: "shadows-effects", label: "CSS Shadows & Effects", icon: Layers3, tools: ["Box Shadow Generator", "Text Shadow Generator", "CSS Multi-Layer Shadow", "CSS Text Shadow Generator", "Glassmorphism Generator", "CSS Backdrop Filter Generator", "CSS Neumorphism Generator", "CSS Mix Blend Mode Generator", "CSS Mask Generator", "CSS Filter Generator"] },
+    { id: "layout-tools", label: "CSS Layout Tools", icon: LayoutGrid, tools: ["CSS Grid Generator", "CSS Grid Layout Builder", "CSS Flexbox Generator", "CSS Flex Playground", "CSS Columns Generator", "CSS Container Query Generator", "Media Query Generator", "CSS Calc Generator", "CSS Clamp Generator", "Aspect Ratio Generator", "CSS Overflow Generator"] },
+    { id: "animations", label: "CSS Animations", icon: Zap, tools: ["CSS Animation Generator", "CSS Keyframe Animator", "CSS Transition Generator", "CSS Transform Generator", "CSS 3D Transform", "CSS Perspective Generator", "Cubic Bezier Editor", "CSS Easing Editor", "CSS Scroll Snap Generator", "CSS Scroll Timeline Generator", "CSS Typing Effect Generator", "CSS Loader Generator"] },
+    { id: "typography", label: "CSS Typography", icon: Type, tools: ["CSS Text Effects", "CSS Type Scale Generator", "CSS Font-Face Generator", "CSS Font Stack Generator", "CSS Line Clamp Generator", "CSS Letter Spacing Generator", "Text Wrap Generator", "CSS Writing Mode Generator"] },
     { id: "shapes-borders", label: "CSS Shapes & Borders", icon: Crop, tools: ["Border Radius", "Clip Path", "Blob Generator", "Triangle Generator"] },
     { id: "component-generators", label: "CSS Component Generators", icon: WandSparkles, tools: ["Button Generator", "Card Generator", "Loader Generator", "Toggle Generator"] },
     { id: "css-utilities", label: "CSS Utilities", icon: SlidersHorizontal, tools: ["CSS Minifier", "Prefix Helper", "Specificity Calculator"] },
@@ -105,6 +106,15 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
   const [activeTool, setActiveTool] = useState(activeCollection.tools[0]);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
+  const toolsNavRef = useRef<HTMLDivElement>(null);
+  const currentTool = activeCollection.tools.includes(activeTool) ? activeTool : activeCollection.tools[0];
+
+  useLayoutEffect(() => {
+    const node = toolsNavRef.current;
+    if (!node) return;
+    const savedScroll = sessionStorage.getItem("dk-tools:sidebar-scroll");
+    if (savedScroll) node.scrollTop = Number(savedScroll) || 0;
+  }, [collectionId]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -126,17 +136,29 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
     });
   };
 
-  const searchResults = useMemo(() => {
+  const rememberSidebarScroll = () => {
+    const node = toolsNavRef.current;
+    if (!node) return;
+    sessionStorage.setItem("dk-tools:sidebar-scroll", String(node.scrollTop));
+  };
+
+const searchResults = useMemo(() => {
     const needle = normalize(query.trim());
     if (!needle) return [];
     return allCollections.filter((collection) => normalize(`${collection.label} ${collection.tools.join(" ")}`).includes(needle));
   }, [query]);
 
-  const openCollection = (collection: ToolCollection) => router.push(`/tools/${collection.id}`);
+  const openCollection = (collection: ToolCollection) => {
+    rememberSidebarScroll();
+    router.push(`/tools/${collection.id}`);
+  };
 
   const openRecentTool = (name: string) => {
     const collection = allCollections.find((item) => item.tools.includes(name));
-    if (collection) router.push(`/tools/${collection.id}`);
+    if (collection) {
+      rememberSidebarScroll();
+      router.push(`/tools/${collection.id}`);
+    }
   };
 
   const selectTool = (name: string) => {
@@ -151,18 +173,18 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
 
   const runTool = () => {
     try {
-      if (activeTool === "Base64 Encoder") setOutput(btoa(unescape(encodeURIComponent(input))));
-      else if (activeTool === "Base64 Decoder") setOutput(decodeURIComponent(escape(atob(input))));
-      else if (activeTool === "URL Encoder") setOutput(encodeURIComponent(input));
-      else if (activeTool === "URL Decoder") setOutput(decodeURIComponent(input));
-      else if (activeTool.includes("JSON Formatter")) setOutput(JSON.stringify(JSON.parse(input), null, 2));
-      else if (activeTool.includes("JSON Minifier")) setOutput(JSON.stringify(JSON.parse(input)));
-      else if (activeTool === "Slug Generator") setOutput(normalize(input).trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-      else if (activeTool === "Case Converter") setOutput(input.split(/\s+/).filter(Boolean).map((word, index) => index ? word[0]?.toUpperCase() + word.slice(1).toLowerCase() : word.toLowerCase()).join(""));
-      else if (activeTool === "Word Counter") setOutput(`${input.trim() ? input.trim().split(/\s+/).length : 0} words · ${input.length} characters`);
-      else if (activeTool === "Text Reverser") setOutput([...input].reverse().join(""));
-      else if (activeTool === "Whitespace Cleaner") setOutput(input.replace(/\s+/g, " ").trim());
-      else setOutput(input || `${activeTool} is ready for input.`);
+      if (currentTool === "Base64 Encoder") setOutput(btoa(unescape(encodeURIComponent(input))));
+      else if (currentTool === "Base64 Decoder") setOutput(decodeURIComponent(escape(atob(input))));
+      else if (currentTool === "URL Encoder") setOutput(encodeURIComponent(input));
+      else if (currentTool === "URL Decoder") setOutput(decodeURIComponent(input));
+      else if (currentTool.includes("JSON Formatter")) setOutput(JSON.stringify(JSON.parse(input), null, 2));
+      else if (currentTool.includes("JSON Minifier")) setOutput(JSON.stringify(JSON.parse(input)));
+      else if (currentTool === "Slug Generator") setOutput(normalize(input).trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+      else if (currentTool === "Case Converter") setOutput(input.split(/\s+/).filter(Boolean).map((word, index) => index ? word[0]?.toUpperCase() + word.slice(1).toLowerCase() : word.toLowerCase()).join(""));
+      else if (currentTool === "Word Counter") setOutput(`${input.trim() ? input.trim().split(/\s+/).length : 0} words · ${input.length} characters`);
+      else if (currentTool === "Text Reverser") setOutput([...input].reverse().join(""));
+      else if (currentTool === "Whitespace Cleaner") setOutput(input.replace(/\s+/g, " ").trim());
+      else setOutput(input || `${currentTool} is ready for input.`);
     } catch {
       setOutput("Invalid input for this tool. Please check the value and try again.");
     }
@@ -171,9 +193,9 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
   return (
     <main className={`tools-hub ${collectionId ? "is-tool-detail" : "is-tools-index"}`}>
       <aside className="tools-sidebar">
-        <button className="tools-sidebar-title" onClick={() => router.push("/tools")}><Zap size={18} /><strong>DK Tools</strong><span>{allCollections.length}</span></button>
+        <button className="tools-sidebar-title" onClick={() => { rememberSidebarScroll(); router.push("/tools"); }}><Zap size={18} /><strong>DK Tools</strong><span>{allCollections.length}</span></button>
         <label className="tools-filter"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.filter} /></label>
-        <div className="tools-nav">
+        <div className="tools-nav" ref={toolsNavRef} onScroll={rememberSidebarScroll}>
           {groups.map((group) => {
             const isCollapsed = collapsed.includes(group.id);
             return <section className="tools-nav-group" key={group.id}>
@@ -207,16 +229,11 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
         </>}
 
         {collectionId && <>
-          <header className="tools-detail-header">
-            <div className="tools-breadcrumb"><button onClick={() => router.push("/tools")}>Tools</button><span>/</span><span>{activeCollection.group}</span><span>/</span><strong>{activeCollection.label}</strong></div>
-            <span className="tools-detail-kicker">{activeCollection.group}</span>
-            <h1>{activeCollection.label}</h1>
-            <p>{language === "vi" ? `Bộ ${activeCollection.tools.length} tiện ích ${activeCollection.label.toLowerCase()} chạy trực tiếp trong trình duyệt.` : `${activeCollection.tools.length} focused ${activeCollection.label.toLowerCase()} that run directly in your browser.`}</p>
-          </header>
-          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : <section className="tool-workspace">
-            <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={activeTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
+          <div className="tools-breadcrumb"><button onClick={() => { rememberSidebarScroll(); router.push("/tools"); }}>Tools</button><span>/</span><span>{activeCollection.group}</span><span>/</span><strong>{currentTool}</strong></div>
+          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : activeCollection.id === "color-tools" ? <CssToolsWorkbench key="color-tools" collectionId="color-tools" /> : activeCollection.id === "gradients-patterns" ? <CssToolsWorkbench key="gradients-patterns" collectionId="gradients-patterns" /> : activeCollection.id === "shadows-effects" ? <CssToolsWorkbench key="shadows-effects" collectionId="shadows-effects" /> : activeCollection.id === "layout-tools" ? <CssToolsWorkbench key="layout-tools" collectionId="layout-tools" /> : activeCollection.id === "animations" ? <CssToolsWorkbench key="animations" collectionId="animations" /> : activeCollection.id === "typography" ? <CssToolsWorkbench key="typography" collectionId="typography" /> : <section className="tool-workspace">
+            <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={currentTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
             <div className="tool-runner">
-              <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${activeTool}...`} /></label>
+              <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${currentTool}...`} /></label>
               <div className="tool-runner-actions"><button onClick={runTool}>{t.run} <Zap size={16} /></button><button onClick={() => { setInput(""); setOutput(""); }}>{t.clear}</button></div>
               <label><span>{t.output}</span><textarea value={output} readOnly placeholder="Your result appears here..." /></label>
             </div>

@@ -5,5 +5,5 @@ import { ToolsHub } from "../page";
 
 export default function ToolCollectionPage() {
   const params = useParams<{ collectionId: string }>();
-  return <ToolsHub key={params.collectionId} collectionId={params.collectionId} />;
+  return <ToolsHub collectionId={params.collectionId} />;
 }
