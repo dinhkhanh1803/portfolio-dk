@@ -26,7 +26,7 @@ type ToolGroup = { id: string; label: string; collections: ToolCollection[] };
 const groups: ToolGroup[] = [
   { id: "encoding", label: "Encoding", collections: [
     { id: "encoding-tools", label: "Encoding Tools", icon: Binary, tools: ["Base64", "Base32", "URL Encoder", "HTML Entities", "Text / Binary", "Data URL"] },
-    { id: "crypto-hash", label: "Crypto & Hash Tools", icon: ShieldCheck, tools: ["SHA Hash Generator", "HMAC Generator", "Checksum Calculator", "Password Generator"] },
+    { id: "crypto-hash", label: "Crypto & Hash Tools", icon: ShieldCheck, tools: ["Hash Generator", "Text Hash Generator", "HMAC Generator", "SRI Hash Generator", "JWT Debugger", "JWT Inspector", "Text Encrypt / Decrypt", "Password Generator"] },
   ]},
   { id: "converters", label: "Converters", collections: [
     { id: "data-format", label: "Data Format Converters", icon: FileJson, tools: ["CSV to JSON", "JSON to CSV", "CSV to SQL", "CSV to Markdown", "YAML to JSON", "JSON to YAML", "JSON to XML", "XML to JSON", "Markdown to JSON", "Markdown to Notion"] },

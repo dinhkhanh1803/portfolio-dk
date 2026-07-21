@@ -59,3 +59,28 @@ test("Encoding and crypto detail layouts share compact workbench contracts", () 
   assert.match(css, /\.tools-main\.is-detail \.(?:encoding|crypto)-workbench\{[^}]*gap:7px/);
   assert.match(css, /\.tools-main\.is-detail \.(?:encoding|crypto)-editor textarea\{[^}]*height:clamp\(150px,24dvh,210px\)/);
 });
+
+
+test("Encoding tabs keep active pills compact", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /\.encoding-tabs\{[^}]*align-items:center/);
+  assert.match(css, /\.encoding-tabs button\{[^}]*align-self:center/);
+});
+
+
+test("Encoding active tab pills use fixed compact height", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs button\{[^}]*height:32px/);
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs button\{[^}]*min-height:32px/);
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs button\{[^}]*display:inline-flex/);
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs button\{[^}]*align-items:center/);
+});
+
+
+test("Encoding tab bar stays vertically compact", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs\{[^}]*height:44px/);
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs\{[^}]*min-height:44px/);
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs\{[^}]*max-height:44px/);
+  assert.match(css, /\.tools-main\.is-detail \.encoding-tabs\{[^}]*padding:5px/);
+});
