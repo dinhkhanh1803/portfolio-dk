@@ -175,3 +175,49 @@ export function maskCss(shape: string, size: number, feather: number, color: str
   const mask = shape === "stripe" ? `linear-gradient(45deg, #000 0 ${size}%, transparent ${size + feather}% 100%)` : shape === "diamond" ? `linear-gradient(45deg, transparent 28%, #000 30% 70%, transparent 72%)` : `radial-gradient(${shape === "circle" ? "circle" : "ellipse"}, #000 ${size}%, transparent ${size + feather}%)`;
   return `.masked-element {\n  background: ${color};\n  mask-image: ${mask};\n  -webkit-mask-image: ${mask};\n}`;
 }
+export type BorderRadiusOptions = { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number; unit: "px" | "%" };
+export function borderRadiusCss(options: BorderRadiusOptions) {
+  const values = [options.topLeft, options.topRight, options.bottomRight, options.bottomLeft].map((value) => `${value}${options.unit}`);
+  return `border-radius: ${values.join(" ")};`;
+}
+
+export type BorderOptions = { width: number; style: string; color: string; radius: number };
+export function borderCss(options: BorderOptions) {
+  return `border: ${options.width}px ${options.style} ${options.color};\nborder-radius: ${options.radius}px;`;
+}
+
+export type OutlineOptions = { width: number; style: string; color: string; offset: number };
+export function outlineCss(options: OutlineOptions) {
+  return `outline: ${options.width}px ${options.style} ${options.color};\noutline-offset: ${options.offset}px;`;
+}
+
+export function clipPathCss(shape: string, inset = 12) {
+  const shapes: Record<string, string> = {
+    circle: "circle(42% at 50% 50%)",
+    ellipse: "ellipse(46% 34% at 50% 50%)",
+    diamond: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+    pentagon: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)",
+    hexagon: "polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)",
+    star: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 56%, 79% 91%, 50% 70%, 21% 91%, 32% 56%, 2% 35%, 39% 35%)",
+    chevron: "polygon(18% 0%, 100% 0%, 82% 50%, 100% 100%, 18% 100%, 0% 50%)",
+  };
+  return `clip-path: ${shape === "inset" ? `inset(${inset}% round ${Math.round(inset / 2)}px)` : shapes[shape] ?? shapes.circle};`;
+}
+
+export type TriangleOptions = { direction: "up" | "right" | "down" | "left"; width: number; height: number; color: string };
+export function triangleCss(options: TriangleOptions) {
+  const horizontal = Math.round(options.width / 2);
+  if (options.direction === "up") return `.triangle {\n  width: 0;\n  height: 0;\n  border-left: ${horizontal}px solid transparent;\n  border-right: ${horizontal}px solid transparent;\n  border-bottom: ${options.height}px solid ${options.color};\n}`;
+  if (options.direction === "down") return `.triangle {\n  width: 0;\n  height: 0;\n  border-left: ${horizontal}px solid transparent;\n  border-right: ${horizontal}px solid transparent;\n  border-top: ${options.height}px solid ${options.color};\n}`;
+  const vertical = Math.round(options.height / 2);
+  return `.triangle {\n  width: 0;\n  height: 0;\n  border-top: ${vertical}px solid transparent;\n  border-bottom: ${vertical}px solid transparent;\n  border-${options.direction === "right" ? "left" : "right"}: ${options.width}px solid ${options.color};\n}`;
+}
+
+export function objectFitCss(fit: string, position: string) {
+  return `object-fit: ${fit};\nobject-position: ${position};`;
+}
+
+export type ScrollbarOptions = { size: number; thumb: string; track: string; radius: number };
+export function scrollbarCss(options: ScrollbarOptions) {
+  return `.scroll-area {\n  scrollbar-width: thin;\n  scrollbar-color: ${options.thumb} ${options.track};\n}\n.scroll-area::-webkit-scrollbar {\n  width: ${options.size}px;\n  height: ${options.size}px;\n}\n.scroll-area::-webkit-scrollbar-track {\n  background: ${options.track};\n  border-radius: ${options.radius}px;\n}\n.scroll-area::-webkit-scrollbar-thumb {\n  background: ${options.thumb};\n  border-radius: ${options.radius}px;\n}`;
+}

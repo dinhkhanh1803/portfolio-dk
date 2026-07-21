@@ -3,9 +3,9 @@
 import { Check, Clipboard, Shuffle } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
-import { animationCss, backdropFilterCss, colorFormats, contrastRatio, filterCss, filterValue, fontFaceCss, fontStackCss, glassmorphismCss, gradientCss, gridCss, hexToRgb, letterSpacingCss, lineClampCss, maskCss, mixBlendCss, neumorphismCss, rgbToHex, shadowCss, textEffectCss, textShadowCss, textWrapCss, typeScaleCss, writingModeCss } from "./css-tools-engine";
+import { animationCss, backdropFilterCss, borderCss, borderRadiusCss, clipPathCss, colorFormats, contrastRatio, filterCss, filterValue, fontFaceCss, fontStackCss, glassmorphismCss, gradientCss, gridCss, hexToRgb, letterSpacingCss, lineClampCss, maskCss, mixBlendCss, neumorphismCss, objectFitCss, outlineCss, rgbToHex, scrollbarCss, shadowCss, textEffectCss, textShadowCss, textWrapCss, triangleCss, typeScaleCss, writingModeCss } from "./css-tools-engine";
 
-type CssCollectionId = "color-tools" | "gradients-patterns" | "shadows-effects" | "layout-tools" | "animations" | "typography";
+type CssCollectionId = "color-tools" | "gradients-patterns" | "shadows-effects" | "layout-tools" | "animations" | "typography" | "shapes-borders";
 type Props = { collectionId: CssCollectionId };
 const tabs: Record<CssCollectionId, string[]> = {
   "color-tools": ["Color Format Converter", "Color Name Finder", "Image Color Picker", "CSS Contrast Checker", "Color Contrast Grid", "Color Palette AI", "Color Scheme Generator"],
@@ -14,6 +14,7 @@ const tabs: Record<CssCollectionId, string[]> = {
   "layout-tools": ["CSS Grid Generator", "CSS Grid Layout Builder", "CSS Flexbox Generator", "CSS Flex Playground", "CSS Columns Generator", "CSS Container Query Generator", "Media Query Generator", "CSS Calc Generator", "CSS Clamp Generator", "Aspect Ratio Generator", "CSS Overflow Generator"],
   animations: ["CSS Animation Generator", "CSS Keyframe Animator", "CSS Transition Generator", "CSS Transform Generator", "CSS 3D Transform", "CSS Perspective Generator", "Cubic Bezier Editor", "CSS Easing Editor", "CSS Scroll Snap Generator", "CSS Scroll Timeline Generator", "CSS Typing Effect Generator", "CSS Loader Generator"],
   typography: ["CSS Text Effects", "CSS Type Scale Generator", "CSS Font-Face Generator", "CSS Font Stack Generator", "CSS Line Clamp Generator", "CSS Letter Spacing Generator", "Text Wrap Generator", "CSS Writing Mode Generator"],
+  "shapes-borders": ["Border Radius Generator", "CSS Border Generator", "CSS Outline Generator", "Clip-path Generator", "CSS Clip-path Shapes", "CSS Triangle Generator", "CSS Object Fit Generator", "CSS Scrollbar Generator"],
 };
 const palettes = [["#ff6b6b", "#ffd93d", "#6bcb77"], ["#22d3ee", "#3b82f6", "#0f172a"], ["#7c3aed", "#60a5fa", "#f0abfc"], ["#0f172a", "#2dd4bf", "#f8fafc"], ["#f97316", "#ec4899", "#8b5cf6"]];
 const colorNames = [{ name: "Royal Blue", hex: "#3b82f6" }, { name: "Emerald", hex: "#10b981" }, { name: "Rose", hex: "#f43f5e" }, { name: "Slate", hex: "#0f172a" }, { name: "Amber", hex: "#f59e0b" }];
@@ -70,6 +71,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
   const [letterSpacing, setLetterSpacing] = useState({ value: 0, unit: "px" as "px" | "em" });
   const [wrap, setWrap] = useState({ whiteSpace: "normal", overflow: "visible", width: 350, lineHeight: 1.5 });
   const [writing, setWriting] = useState({ mode: "horizontal-tb", direction: "ltr" as "ltr" | "rtl", orientation: "mixed" });
+  const [shape, setShape] = useState({ radiusMode: "uniform", radius: 16, topLeft: 16, topRight: 16, bottomRight: 16, bottomLeft: 16, borderWidth: 3, borderStyle: "solid", borderColor: "#3b82f6", outlineWidth: 3, outlineStyle: "solid", outlineColor: "#f97316", outlineOffset: 6, clipShape: "hexagon", clipInset: 12, triangleDirection: "up" as "up" | "right" | "down" | "left", triangleWidth: 140, triangleHeight: 120, objectFit: "cover", objectPosition: "center", scrollbarSize: 12, scrollbarThumb: "#3b82f6", scrollbarTrack: "#e5e7eb", scrollbarRadius: 999 });
   const colorData = useMemo(() => colorFormats(hex, alpha), [alpha, hex]);
   const rgb = hexToRgb(hex);
   const activeTitle = active;
@@ -79,6 +81,9 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
   const transform3dValue = `rotateX(${animationLab.rotateX}deg) rotateY(${animationLab.rotateY}deg) rotateZ(${animationLab.rotateZ}deg) translateZ(${animationLab.translateZ}px) scale(${animationLab.scale3d})`;
   const typingEffectCss = `.typing-text {\n  overflow: hidden;\n  white-space: nowrap;\n  border-right: ${animationLab.typingCursor}px solid ${animationLab.typingColor};\n  animation: typing ${animationLab.typingDuration}ms steps(${Math.max(text.length, 1)}) forwards${animationLab.typingBlink ? `, blink .75s step-end infinite` : ""};\n  color: ${animationLab.typingColor};\n  background: ${animationLab.typingBackground};\n}\n\n@keyframes typing { from { width: 0; } to { width: ${Math.max(text.length, 1)}ch; } }${animationLab.typingBlink ? `\n@keyframes blink { 50% { border-color: transparent; } }` : ""}`;
   const loaderCss = `.loader {\n  width: ${animationLab.loaderSize}px;\n  height: ${animationLab.loaderSize}px;\n  color: ${animationLab.loaderColor};\n  animation: loader-spin ${animation.duration}ms linear infinite;\n}\n\n@keyframes loader-spin { to { transform: rotate(360deg); } }`;
+  const shapeRadius = shape.radiusMode === "uniform" ? { topLeft: shape.radius, topRight: shape.radius, bottomRight: shape.radius, bottomLeft: shape.radius, unit: "px" as const } : { topLeft: shape.topLeft, topRight: shape.topRight, bottomRight: shape.bottomRight, bottomLeft: shape.bottomLeft, unit: "px" as const };
+  const shapeClipPath = clipPathCss(shape.clipShape, shape.clipInset).replace("clip-path: ", "").replace(";", "");
+  const trianglePreviewBorder = shape.triangleDirection === "up" ? { borderLeft: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderRight: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderBottom: `${shape.triangleHeight}px solid ${shape.borderColor}` } : shape.triangleDirection === "down" ? { borderLeft: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderRight: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderTop: `${shape.triangleHeight}px solid ${shape.borderColor}` } : { borderTop: `${Math.round(shape.triangleHeight / 2)}px solid transparent`, borderBottom: `${Math.round(shape.triangleHeight / 2)}px solid transparent`, [shape.triangleDirection === "right" ? "borderLeft" : "borderRight"]: `${shape.triangleWidth}px solid ${shape.borderColor}` };
   const css = useMemo(() => {
     if (collectionId === "color-tools") {
       if (active.includes("Name")) return `/* Closest color name */\n--${nearestColorName(hex).name.toLowerCase().replace(/\s+/g, "-")}: ${hex};`;
@@ -105,6 +110,15 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
       if (active.includes("Filter")) return filterCss(effectFilters);
       return shadowCss(shadow);
     }
+    if (collectionId === "shapes-borders") {
+      if (active.includes("Border Generator")) return borderCss({ width: shape.borderWidth, style: shape.borderStyle, color: shape.borderColor, radius: shape.radius });
+      if (active.includes("Outline")) return outlineCss({ width: shape.outlineWidth, style: shape.outlineStyle, color: shape.outlineColor, offset: shape.outlineOffset });
+      if (active.includes("Clip-path")) return clipPathCss(shape.clipShape, shape.clipInset);
+      if (active.includes("Triangle")) return triangleCss({ direction: shape.triangleDirection, width: shape.triangleWidth, height: shape.triangleHeight, color: shape.borderColor });
+      if (active.includes("Object Fit")) return objectFitCss(shape.objectFit, shape.objectPosition);
+      if (active.includes("Scrollbar")) return scrollbarCss({ size: shape.scrollbarSize, thumb: shape.scrollbarThumb, track: shape.scrollbarTrack, radius: shape.scrollbarRadius });
+      return borderRadiusCss(shapeRadius);
+    }
     if (collectionId === "typography") {
       const effect = active.includes("Neon") ? "neon" : active.includes("Glitch") ? "glitch" : active.includes("Stroke") ? "stroke" : "gradient";
       if (active.includes("Type Scale")) return typeScaleCss(scaleBase, scaleRatio, scaleAbove, scaleBelow, scaleUnit);
@@ -115,7 +129,8 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
       if (active.includes("Text Wrap")) return textWrapCss(wrap.whiteSpace, wrap.overflow, wrap.width, wrap.lineHeight);
       if (active.includes("Writing Mode")) return writingModeCss(writing.mode, writing.direction, writing.orientation);
       return textEffectCss(effect, text, fontSize, fontWeight, fontFamily, angle, colors);
-    }    if (collectionId === "layout-tools") {
+    }
+    if (collectionId === "layout-tools") {
       const gridLayoutCss = `.grid-layout {\n  display: grid;\n  grid-template-columns: repeat(${layout.gridColumns}, ${layout.equalTracks ? "1fr" : "minmax(120px, 1fr)"});\n  grid-template-rows: repeat(${layout.gridRows}, ${layout.equalTracks ? "1fr" : "auto"});\n  gap: ${grid.gap}px;\n}`;
       const flexCss = `.flex-container {\n  display: flex;\n  flex-direction: ${layout.flexDirection};\n  justify-content: ${layout.justifyContent};\n  align-items: ${layout.alignItems};\n  flex-wrap: ${layout.flexWrap};\n  gap: ${grid.gap}px;\n}`;
       const calcValue = `calc(${layout.calcA}${layout.calcAUnit} ${layout.calcOp} ${layout.calcB}${layout.calcBUnit})`;
@@ -146,7 +161,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
       return animationCss(animation);
     }
     return animationCss(animation);
-  }, [active, animation, angle, blend.background, blend.foreground, blend.mode, collectionId, colorData, colors, effectFilters, fontFace, fontFamily, fontSize, fontStack, fontWeight, foreground, glass, gradientType, grid, hex, layout, letterSpacing, lineClamp, mask.color, mask.feather, mask.shape, mask.size, neumorphism, scaleAbove, scaleBase, scaleBelow, scaleRatio, scaleUnit, shadow, text, textShadowLayers, wrap, writing, animationLab, bezierValue, transformValue, transform3dValue, typingEffectCss, loaderCss]);
+  }, [active, animation, angle, blend.background, blend.foreground, blend.mode, collectionId, colorData, colors, effectFilters, fontFace, fontFamily, fontSize, fontStack, fontWeight, foreground, glass, gradientType, grid, hex, layout, letterSpacing, lineClamp, mask.color, mask.feather, mask.shape, mask.size, neumorphism, scaleAbove, scaleBase, scaleBelow, scaleRatio, scaleUnit, shadow, text, textShadowLayers, wrap, writing, animationLab, bezierValue, transformValue, transform3dValue, typingEffectCss, loaderCss, shape, shapeRadius]);
 
   const setRgb = (channel: "r" | "g" | "b", value: number) => setHex(rgbToHex(channel === "r" ? value : rgb.r, channel === "g" ? value : rgb.g, channel === "b" ? value : rgb.b));
   const setRandomPalette = () => setColors([0, 1, 2].map(() => "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0")));
@@ -502,6 +517,50 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
     <label>Color<input type="color" value={animationLab.loaderColor} onChange={(event) => setAnimationLab((current) => ({ ...current, loaderColor: event.target.value }))} /></label>
   </>;
 
+  const updateShape = (key: keyof typeof shape, value: string | number | boolean) => setShape((current) => ({ ...current, [key]: value }));
+  const renderRadiusControls = () => <>
+    <div className="css-segmented"><button className={shape.radiusMode === "uniform" ? "is-active" : ""} onClick={() => updateShape("radiusMode", "uniform")}>Uniform</button><button className={shape.radiusMode === "individual" ? "is-active" : ""} onClick={() => updateShape("radiusMode", "individual")}>Individual</button></div>
+    {shape.radiusMode === "uniform" ? <label className="css-range">Radius <input type="range" min="0" max="120" value={shape.radius} onChange={(event) => updateShape("radius", Number(event.target.value))} /><span>{shape.radius}px</span></label> : <div className="css-field-row"><label>Top left<input type="number" value={shape.topLeft} onChange={(event) => updateShape("topLeft", Number(event.target.value))} /></label><label>Top right<input type="number" value={shape.topRight} onChange={(event) => updateShape("topRight", Number(event.target.value))} /></label><label>Bottom right<input type="number" value={shape.bottomRight} onChange={(event) => updateShape("bottomRight", Number(event.target.value))} /></label><label>Bottom left<input type="number" value={shape.bottomLeft} onChange={(event) => updateShape("bottomLeft", Number(event.target.value))} /></label></div>}
+    <div className="css-preset-buttons">{[["None", 0], ["Rounded", 12], ["Card", 18], ["Pill", 999], ["Circle", 80], ["Bottom Only", 24]].map(([label, value]) => <button key={label as string} onClick={() => setShape((current) => ({ ...current, radiusMode: "uniform", radius: value as number, bottomLeft: value as number, bottomRight: value as number, topLeft: label === "Bottom Only" ? 0 : value as number, topRight: label === "Bottom Only" ? 0 : value as number }))}>{label as string}</button>)}</div>
+  </>;
+
+  const renderBorderControls = () => <>
+    <label className="css-range">Width <input type="range" min="0" max="24" value={shape.borderWidth} onChange={(event) => updateShape("borderWidth", Number(event.target.value))} /><span>{shape.borderWidth}px</span></label>
+    <div className="css-field-row"><label>Style<select value={shape.borderStyle} onChange={(event) => updateShape("borderStyle", event.target.value)}>{["solid", "dashed", "dotted", "double", "groove", "ridge", "inset", "outset"].map((item) => <option key={item}>{item}</option>)}</select></label><label>Color<input type="color" value={shape.borderColor} onChange={(event) => updateShape("borderColor", event.target.value)} /></label></div>
+    <label className="css-range">Radius <input type="range" min="0" max="80" value={shape.radius} onChange={(event) => updateShape("radius", Number(event.target.value))} /><span>{shape.radius}px</span></label>
+  </>;
+
+  const renderOutlineControls = () => <>
+    <label className="css-range">Width <input type="range" min="1" max="18" value={shape.outlineWidth} onChange={(event) => updateShape("outlineWidth", Number(event.target.value))} /><span>{shape.outlineWidth}px</span></label>
+    <label className="css-range">Offset <input type="range" min="-12" max="32" value={shape.outlineOffset} onChange={(event) => updateShape("outlineOffset", Number(event.target.value))} /><span>{shape.outlineOffset}px</span></label>
+    <div className="css-field-row"><label>Style<select value={shape.outlineStyle} onChange={(event) => updateShape("outlineStyle", event.target.value)}>{["solid", "dashed", "dotted", "double"].map((item) => <option key={item}>{item}</option>)}</select></label><label>Color<input type="color" value={shape.outlineColor} onChange={(event) => updateShape("outlineColor", event.target.value)} /></label></div>
+  </>;
+
+  const renderClipPathControls = () => <>
+    <div className="css-preset-buttons">{["circle", "ellipse", "inset", "diamond", "pentagon", "hexagon", "star", "chevron"].map((item) => <button key={item} className={shape.clipShape === item ? "is-active" : ""} onClick={() => updateShape("clipShape", item)}>{item}</button>)}</div>
+    <label className="css-range">Inset / Round <input type="range" min="0" max="36" value={shape.clipInset} onChange={(event) => updateShape("clipInset", Number(event.target.value))} /><span>{shape.clipInset}%</span></label>
+    <div className="css-field-row"><label>Fill<input type="color" value={colors[0]} onChange={(event) => setColors((current) => [event.target.value, ...current.slice(1)])} /></label><label>Accent<input type="color" value={colors[1]} onChange={(event) => setColors((current) => current.map((item, index) => index === 1 ? event.target.value : item))} /></label></div>
+  </>;
+
+  const renderTriangleControls = () => <>
+    <div className="css-segmented">{(["up", "right", "down", "left"] as const).map((item) => <button key={item} className={shape.triangleDirection === item ? "is-active" : ""} onClick={() => updateShape("triangleDirection", item)}>{item}</button>)}</div>
+    <label className="css-range">Width <input type="range" min="40" max="260" value={shape.triangleWidth} onChange={(event) => updateShape("triangleWidth", Number(event.target.value))} /><span>{shape.triangleWidth}px</span></label>
+    <label className="css-range">Height <input type="range" min="40" max="240" value={shape.triangleHeight} onChange={(event) => updateShape("triangleHeight", Number(event.target.value))} /><span>{shape.triangleHeight}px</span></label>
+    <label>Color<input type="color" value={shape.borderColor} onChange={(event) => updateShape("borderColor", event.target.value)} /></label>
+  </>;
+
+  const renderObjectFitControls = () => <>
+    <div className="css-preset-buttons">{["fill", "contain", "cover", "none", "scale-down"].map((item) => <button key={item} className={shape.objectFit === item ? "is-active" : ""} onClick={() => updateShape("objectFit", item)}>{item}</button>)}</div>
+    <div className="css-preset-buttons">{["center", "top", "bottom", "left", "right", "top left", "top right", "bottom left", "bottom right"].map((item) => <button key={item} className={shape.objectPosition === item ? "is-active" : ""} onClick={() => updateShape("objectPosition", item)}>{item}</button>)}</div>
+  </>;
+
+  const renderScrollbarControls = () => <>
+    <label className="css-range">Size <input type="range" min="4" max="24" value={shape.scrollbarSize} onChange={(event) => updateShape("scrollbarSize", Number(event.target.value))} /><span>{shape.scrollbarSize}px</span></label>
+    <label className="css-range">Radius <input type="range" min="0" max="999" value={shape.scrollbarRadius} onChange={(event) => updateShape("scrollbarRadius", Number(event.target.value))} /><span>{shape.scrollbarRadius}px</span></label>
+    <div className="css-field-row"><label>Thumb<input type="color" value={shape.scrollbarThumb} onChange={(event) => updateShape("scrollbarThumb", event.target.value)} /></label><label>Track<input type="color" value={shape.scrollbarTrack} onChange={(event) => updateShape("scrollbarTrack", event.target.value)} /></label></div>
+  </>;
+
+  const renderShapeControls = () => active.includes("Border Generator") ? renderBorderControls() : active.includes("Outline") ? renderOutlineControls() : active.includes("Clip-path") ? renderClipPathControls() : active.includes("Triangle") ? renderTriangleControls() : active.includes("Object Fit") ? renderObjectFitControls() : active.includes("Scrollbar") ? renderScrollbarControls() : renderRadiusControls();
   const renderAnimationControls = () => active.includes("Keyframe") ? renderKeyframeAnimator() : active.includes("Transition") ? renderTransitionGenerator() : active === "CSS Transform Generator" ? renderTransformGenerator() : active.includes("3D Transform") ? renderThreeDTransform() : active.includes("Perspective") ? renderPerspectiveGenerator() : active.includes("Bezier") ? renderBezierEditor() : active.includes("Easing") ? renderEasingEditor() : active.includes("Scroll Snap") ? renderScrollSnapGenerator() : active.includes("Scroll Timeline") ? renderScrollTimelineGenerator() : active.includes("Typing") ? renderTypingEffectGenerator() : active.includes("Loader") ? renderLoaderGenerator() : renderAnimationGenerator();
   const renderShadowPreview = () => {
     const shadowValue = shadowCss(shadow).replace("box-shadow: ", "").replace(";", "");
@@ -565,6 +624,25 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
     if (active.includes("Keyframe")) return <div className="css-animation-stage"><div className="css-keyframe-demo" style={{ animation: `custom-motion ${animation.duration}ms ${animation.timing} ${animation.delay}ms ${animation.iteration} ${animation.direction} ${animation.fillMode}` }}>Keyframes</div></div>;
     return <div className="css-animation-stage"><div className="css-animated-box" style={{ animation: `${animation.name} ${animation.duration}ms ${animation.timing} ${animation.delay}ms ${animation.iteration} ${animation.direction} ${animation.fillMode}` }}>{text || "Element"}</div></div>;
   };
+  const renderShapePreview = () => {
+    if (active.includes("Object Fit")) return <div className="css-object-fit-stage"><img alt="Object fit preview" style={{ objectFit: shape.objectFit as CSSProperties["objectFit"], objectPosition: shape.objectPosition }} src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80" /><span>object-fit: {shape.objectFit}</span></div>;
+    if (active.includes("Scrollbar")) {
+      const scrollbarPreviewStyle = {
+        scrollbarColor: `${shape.scrollbarThumb} ${shape.scrollbarTrack}`,
+        scrollbarWidth: shape.scrollbarSize <= 8 ? "thin" : "auto",
+        "--scrollbar-size": `${shape.scrollbarSize}px`,
+        "--scrollbar-thumb": shape.scrollbarThumb,
+        "--scrollbar-track": shape.scrollbarTrack,
+        "--scrollbar-radius": `${shape.scrollbarRadius}px`,
+      } as CSSProperties & Record<`--${string}`, string>;
+      return <div className="css-scrollbar-stage"><div style={scrollbarPreviewStyle}>{Array.from({ length: 12 }, (_, index) => <p key={index}>Scrollable content row {index + 1} keeps the preview bounded while the generated scrollbar CSS stays copy-ready.</p>)}</div></div>;
+    }
+    if (active.includes("Triangle")) return <div className="css-triangle-stage"><div className="css-triangle-preview" style={trianglePreviewBorder as CSSProperties} /></div>;
+    if (active.includes("Clip-path")) return <div className="css-clip-stage"><div className="css-clip-preview" style={{ clipPath: shapeClipPath, WebkitClipPath: shapeClipPath, background: gradientValue("linear", angle, colors) }}><span>{shape.clipShape}</span></div></div>;
+    if (active.includes("Outline")) return <div className="css-shape-card" style={{ outline: `${shape.outlineWidth}px ${shape.outlineStyle} ${shape.outlineColor}`, outlineOffset: shape.outlineOffset, borderRadius: shape.radius }}>Outline</div>;
+    if (active.includes("Border Generator")) return <div className="css-shape-card" style={{ border: `${shape.borderWidth}px ${shape.borderStyle} ${shape.borderColor}`, borderRadius: shape.radius }}>Border</div>;
+    return <div className="css-shape-card" style={{ borderRadius: borderRadiusCss(shapeRadius).replace("border-radius: ", "").replace(";", "") }}>Preview Box</div>;
+  };
   const previewStyle = collectionId === "color-tools" ? { background: active.includes("Palette") || active.includes("Scheme") ? gradientValue("linear", 135, colors) : hex, color: foreground } : collectionId === "gradients-patterns" ? { background: active.includes("Pattern") || active.includes("Noise") ? `radial-gradient(${colors[0]} 1px, transparent 1px)` : gradientValue(active.includes("Conic") ? "conic" : active.includes("Mesh") ? "radial" : gradientType, angle, colors), backgroundSize: active.includes("Pattern") || active.includes("Noise") ? "18px 18px" : undefined } : {};  const isTextEffect = active.includes("Text Effects") || active === "CSS Text Effects";
   const typographyPreviewStyle: CSSProperties = {
     fontFamily: active.includes("Font Stack") ? fontStack.primary : fontFamily,
@@ -585,18 +663,19 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
     color: isTextEffect ? "transparent" : undefined,
   };
 
-  return <section className="css-tool-workbench">
-    <div className="data-format-tabs css-tool-tabs" role="tablist" style={{ flexWrap: "wrap", overflow: "visible", overflowX: "visible", overflowY: "visible", whiteSpace: "normal" }}>{tabs[collectionId].map((name) => <button key={name} style={{ flex: "0 1 auto" }} className={active === name ? "is-active" : ""} onClick={() => setActive(name)}>{name}</button>)}</div>
+  return <section className={`css-tool-workbench css-tool-workbench--${collectionId}`} style={collectionId === "shapes-borders" ? { maxHeight: "100%", overflowY: "auto", overscrollBehavior: "contain" } : undefined}>
+    <div className="data-format-tabs css-tool-tabs" role="tablist" style={{ flex: "0 0 auto", flexWrap: "wrap", overflow: "visible", overflowX: "visible", overflowY: "visible", whiteSpace: "normal" }}>{tabs[collectionId].map((name) => <button key={name} style={{ flex: "0 1 auto" }} className={active === name ? "is-active" : ""} onClick={() => setActive(name)}>{name}</button>)}</div>
     <div className="css-tool-intro"><div><h2>{activeTitle}</h2></div></div>
-    <div className="css-tool-grid">
+    <div className="css-tool-grid" style={collectionId === "shapes-borders" ? { overflow: "visible" } : undefined}>
       <div className="css-control-panel">
-        {collectionId === "color-tools" ? renderColorControls() : collectionId === "gradients-patterns" ? renderGradientControls() : collectionId === "shadows-effects" ? renderShadowControls() : collectionId === "layout-tools" ? renderLayoutControls() : collectionId === "typography" ? renderTypographyControls() : renderAnimationControls()}
+        {collectionId === "color-tools" ? renderColorControls() : collectionId === "gradients-patterns" ? renderGradientControls() : collectionId === "shadows-effects" ? renderShadowControls() : collectionId === "layout-tools" ? renderLayoutControls() : collectionId === "typography" ? renderTypographyControls() : collectionId === "shapes-borders" ? renderShapeControls() : renderAnimationControls()}
       </div>
       <div className="css-preview-column">
         <div className="css-tool-preview" style={previewStyle}>
           {collectionId === "shadows-effects" && renderShadowPreview()}
           {collectionId === "layout-tools" && renderLayoutPreview()}
           {collectionId === "animations" && renderAnimationPreview()}
+          {collectionId === "shapes-borders" && renderShapePreview()}
           {collectionId === "typography" && <div className={active.includes("Type Scale") ? "css-type-scale-preview" : active.includes("Font-Face") ? "css-font-face-preview" : active.includes("Writing Mode") ? "css-writing-preview" : "css-typography-preview"} style={typographyPreviewStyle}><strong>{active.includes("Type Scale") ? "--text-4xl" : text}</strong><small>{active.includes("Font-Face") ? "@font-face preview" : active.includes("Writing Mode") ? "Writing mode preview" : "Typography preview"}</small></div>}
           {(collectionId === "color-tools" || collectionId === "gradients-patterns") && <div className="css-preview-card"><strong>{activeTitle}</strong><span>Preview</span></div>}
         </div>

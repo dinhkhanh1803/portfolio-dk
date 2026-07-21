@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { hexToRgb, rgbToHex, colorFormats, contrastRatio, gradientCss, shadowCss, gridCss, animationCss, typeScaleCss, fontFaceCss, fontStackCss, lineClampCss, letterSpacingCss, textWrapCss, writingModeCss, textEffectCss, textShadowCss, glassmorphismCss, backdropFilterCss, filterCss, neumorphismCss, mixBlendCss, maskCss } from "../app/tools/css-tools-engine.ts";
+import { hexToRgb, rgbToHex, colorFormats, contrastRatio, gradientCss, shadowCss, gridCss, animationCss, typeScaleCss, fontFaceCss, fontStackCss, lineClampCss, letterSpacingCss, textWrapCss, writingModeCss, textEffectCss, textShadowCss, glassmorphismCss, backdropFilterCss, filterCss, neumorphismCss, mixBlendCss, maskCss, borderRadiusCss, borderCss, outlineCss, clipPathCss, triangleCss, objectFitCss, scrollbarCss } from "../app/tools/css-tools-engine.ts";
 
 test("CSS color engine converts formats and contrast", () => {
   assert.deepEqual(hexToRgb("#3b82f6"), { r: 59, g: 130, b: 246 });
@@ -91,7 +91,7 @@ test("CSS tools layout avoids fixed minimum columns that overflow the detail pan
 test("Tools page routes CSS collections to dedicated CSS workbench and keeps UTF-8 copy", () => {
   const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
   assert.match(page, /import CssToolsWorkbench from "\.\/css-tools-workbench";/);
-  for (const id of ["color-tools", "gradients-patterns", "shadows-effects", "layout-tools", "animations", "typography"]) assert.match(page, new RegExp(`activeCollection\\.id === "${id}"`));
+  for (const id of ["color-tools", "gradients-patterns", "shadows-effects", "layout-tools", "animations", "typography", "shapes-borders"]) assert.match(page, new RegExp(`activeCollection\\.id === "${id}"`));
   assert.match(page, /L\u1ecdc c\u00f4ng c\u1ee5/);
   assert.doesNotMatch(page, /\u00c3\u0192|\u00c3\u201a|\u00c2|\u00e2\u20ac/);
 });
@@ -157,7 +157,7 @@ test("detail pages use wrapped tabs instead of horizontal tab scrolling", () => 
 test("CSS tool tabs force wrapped layout inline and detail header is not rendered", () => {
   const workbench = readFileSync(resolve("app/tools/css-tools-workbench.tsx"), "utf8");
   const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
-  assert.match(workbench, /style=\{\{ flexWrap: "wrap", overflow: "visible", overflowX: "visible", overflowY: "visible", whiteSpace: "normal" \}\}/);
+  assert.match(workbench, /style=\{\{ flex: "0 0 auto", flexWrap: "wrap", overflow: "visible", overflowX: "visible", overflowY: "visible", whiteSpace: "normal" \}\}/);
   assert.match(workbench, /style=\{\{ flex: "0 1 auto" \}\}/);
   assert.doesNotMatch(page, /<header className="tools-detail-header">/);
   assert.match(page, /className="tools-breadcrumb"/);
@@ -171,4 +171,41 @@ test("detail pages keep the original breadcrumb style while removing the large h
   assert.doesNotMatch(page, /<header className="tools-detail-header">/);
   assert.match(css, /Tools detail mini breadcrumb/);
   assert.match(css, /\.tools-mini-breadcrumb\{[^}]*display:flex/);
+});
+
+
+test("CSS shapes and borders engine creates copy-ready CSS", () => {
+  assert.equal(borderRadiusCss({ topLeft: 16, topRight: 16, bottomRight: 16, bottomLeft: 16, unit: "px" }), "border-radius: 16px 16px 16px 16px;");
+  assert.match(borderCss({ width: 3, style: "dashed", color: "#3b82f6", radius: 12 }), /border: 3px dashed #3b82f6/);
+  assert.match(outlineCss({ width: 2, style: "solid", color: "#f97316", offset: 6 }), /outline-offset: 6px/);
+  assert.match(clipPathCss("hexagon", 12), /polygon\(25% 5%/);
+  assert.match(triangleCss({ direction: "up", width: 120, height: 96, color: "#3b82f6" }), /border-bottom: 96px solid #3b82f6/);
+  assert.equal(objectFitCss("cover", "center"), "object-fit: cover;\nobject-position: center;");
+  assert.match(scrollbarCss({ size: 12, thumb: "#3b82f6", track: "#e5e7eb", radius: 999 }), /::-webkit-scrollbar-thumb/);
+});
+
+test("Shapes and borders tools implement dedicated workflows and bounded previews", () => {
+  const workbench = readFileSync(resolve("app/tools/css-tools-workbench.tsx"), "utf8");
+  const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
+  for (const label of ["Border Radius Generator", "CSS Border Generator", "CSS Outline Generator", "Clip-path Generator", "CSS Clip-path Shapes", "CSS Triangle Generator", "CSS Object Fit Generator", "CSS Scrollbar Generator"]) {
+    assert.match(workbench, new RegExp(label));
+    assert.match(page, new RegExp(label));
+  }
+  for (const token of ["renderRadiusControls", "renderBorderControls", "renderOutlineControls", "renderClipPathControls", "renderTriangleControls", "renderObjectFitControls", "renderScrollbarControls", "renderShapePreview"]) assert.match(workbench, new RegExp(token));
+  assert.match(workbench, /collectionId === "shapes-borders" \? \{ maxHeight: "100%", overflowY: "auto"/);
+  assert.match(workbench, /collectionId === "shapes-borders" \? \{ overflow: "visible" \}/);
+  assert.match(workbench, /style=\{\{ flex: "0 0 auto", flexWrap: "wrap"/);
+  for (const klass of ["css-shape-card", "css-clip-stage", "css-triangle-stage", "css-object-fit-stage", "css-scrollbar-stage"]) assert.match(workbench, new RegExp(klass));
+  assert.match(page, /activeCollection\.id === "shapes-borders"/);
+});
+
+test("Shapes and borders stylesheet keeps object fit and scrollbar previews bounded", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /CSS shapes and borders dedicated previews/);
+  assert.match(css, /\.css-object-fit-stage img\{[^}]*height:300px/);
+  assert.match(css, /\.css-scrollbar-stage>div\{[^}]*max-height:230px/);
+  assert.match(css, /\.css-scrollbar-stage>div::\-webkit-scrollbar/);
+  assert.match(css, /:has\(\.css-tool-workbench--shapes-borders\)\{overflow-y:auto/);
+  assert.match(css, /css-tool-workbench--shapes-borders \.css-tool-tabs\{display:grid!important;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);flex:0 0 auto!important/);
+  assert.match(css, /@media\(max-width:900px\)\{\.tools-main\.is-detail \.css-tool-workbench--shapes-borders \.css-tool-tabs\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
