@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../language-provider";
 import EncodingWorkbench from "./encoding-workbench";
+import DataFormatWorkbench from "./data-format-workbench";
 
 type ToolCollection = {
   id: string;
@@ -27,7 +28,7 @@ const groups: ToolGroup[] = [
     { id: "crypto-hash", label: "Crypto & Hash Tools", icon: ShieldCheck, tools: ["SHA Hash Generator", "HMAC Generator", "Checksum Calculator", "Password Generator"] },
   ]},
   { id: "converters", label: "Converters", collections: [
-    { id: "data-format", label: "Data Format Converters", icon: FileJson, tools: ["JSON to YAML", "YAML to JSON", "CSV to JSON", "XML to JSON"] },
+    { id: "data-format", label: "Data Format Converters", icon: FileJson, tools: ["CSV to JSON", "JSON to CSV", "CSV to SQL", "CSV to Markdown", "YAML to JSON", "JSON to YAML", "JSON to XML", "XML to JSON", "Markdown to JSON", "Markdown to Notion"] },
     { id: "code-converters", label: "Code Converters", icon: Code2, tools: ["HTML to JSX", "CSS to Tailwind", "cURL to Fetch", "SQL to Prisma"] },
     { id: "number-converters", label: "Number Converters", icon: Hash, tools: ["Binary Converter", "Hex Converter", "Roman Numerals", "Big Number Formatter"] },
     { id: "unit-converters", label: "Unit Converters", icon: Calculator, tools: ["Length", "Weight", "Temperature", "Storage", "Speed"] },
@@ -207,7 +208,7 @@ export function ToolsHub({ collectionId }: { collectionId?: string }) {
             <h1>{activeCollection.label}</h1>
             <p>{language === "vi" ? `Bộ ${activeCollection.tools.length} tiện ích ${activeCollection.label.toLowerCase()} chạy trực tiếp trong trình duyệt.` : `${activeCollection.tools.length} focused ${activeCollection.label.toLowerCase()} that run directly in your browser.`}</p>
           </header>
-          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : <section className="tool-workspace">
+          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : <section className="tool-workspace">
             <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={activeTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
             <div className="tool-runner">
               <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${activeTool}...`} /></label>
