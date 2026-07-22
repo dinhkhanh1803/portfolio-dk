@@ -7,7 +7,7 @@ import test from "node:test";
 test("portfolio data covers all bilingual areas", async () => {
   const { portfolio, siteNav } = await import(pathToFileURL(resolve("app/portfolio-data.ts")).href);
   assert.deepEqual(siteNav.map((item) => item.href), ["/", "/projects", "/tools", "/playground", "/blog", "/contact"]);
-  assert.deepEqual(siteNav.map((item) => item.label.vi), ["Trang chủ", "Dự án", "Công cụ", "Trò chơi", "Bài viết", "Liên hệ"]);
+  assert.deepEqual(siteNav.map((item) => item.label.vi), ["Trang chủ", "Dự án", "Công cụ", "Trò chơi", "Tài liệu", "Liên hệ"]);
   for (const language of ["vi", "en"]) {
     assert.equal(portfolio[language].profile.role, "Full-stack Developer");
     assert.equal(portfolio[language].projects.length, 15);
@@ -100,4 +100,149 @@ test("projects page provides a bilingual searchable and filterable project catal
   assert.match(css, /\.project-showcase-card/);
   assert.match(css, /\.project-filter\.is-active/);
   assert.match(css, /@media \(max-width: 760px\)/);
+});
+
+test("blog route is a bilingual searchable programming knowledge hub", () => {
+  const blog = readFileSync(resolve("app/blog/page.tsx"), "utf8");
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  assert.match(blog, /useMemo/);
+  assert.match(blog, /type="search"/);
+  assert.match(blog, /Programming documentation/);
+  assert.match(blog, /foundations/);
+  assert.match(blog, /algorithms/);
+  assert.match(blog, /filteredDocuments/);
+  assert.match(blog, /document-empty/);
+  assert.match(css, /\.docs-page/);
+  assert.match(css, /\.docs-search/);
+  assert.match(css, /\.docs-topic-card/);
+});
+
+
+test("docs hub replaces the full library with recently read documents", () => {
+  const hub = readFileSync(resolve("app/blog/page.tsx"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+
+  assert.match(hub, /docs-recently-read/);
+  assert.match(hub, /docs-recent-documents/);
+  assert.doesNotMatch(hub, /docs-library/);
+  assert.match(detail, /docs-recent-documents/);
+  assert.match(detail, /localStorage\.setItem/);
+});
+test("languages docs provide compact heading and learning-discipline filters", () => {
+  const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+
+  assert.match(topic, /useState/);
+  assert.match(topic, /languageFilters/);
+  for (const label of ["Frontend", "Backend", "Database", "DevOps", "Mobile", "Game"]) assert.match(topic, new RegExp(label));
+  assert.match(topic, /docs-topic-filters/);
+  assert.match(styles, /:global\(\.docs-topic-heading\.is-coral h1\)\s*\{[^}]*font-size:\s*clamp\(26px,\s*3vw,\s*38px\)/s);
+  assert.match(styles, /:global\(\.docs-topic-filters\)/);
+});
+test("tools catalog covers developer workflow and AI learning hubs", async () => {
+  const { docsArticles } = await import(pathToFileURL(resolve("app/docs-data.ts")).href);
+  const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+  const tools = docsArticles.filter((article) => article.topic === "tools");
+  const titles = tools.map((article) => article.title.en).join(" ");
+
+  assert.ok(tools.length >= 30, `Expected at least 30 tools cards, received ${tools.length}`);
+  for (const keyword of ["Git", "Docker", "GitHub Actions", "VS Code", "DevTools", "AI", "MCP"]) assert.match(titles, new RegExp(keyword));
+  assert.match(topic, /topic\.id === "tools"/);
+  assert.match(detail, /topic\.id === "tools"/);
+});
+test("algorithms catalog covers core structures, techniques, and a learning hub", async () => {
+  const { docsArticles } = await import(pathToFileURL(resolve("app/docs-data.ts")).href);
+  const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+  const algorithms = docsArticles.filter((article) => article.topic === "algorithms");
+  const titles = algorithms.map((article) => article.title.en).join(" ");
+
+  assert.ok(algorithms.length >= 32, `Expected at least 32 algorithm cards, received ${algorithms.length}`);
+  for (const keyword of ["Big O", "Binary search", "Dynamic programming", "Graph", "Sorting", "Tree"]) assert.match(titles, new RegExp(keyword));
+  assert.match(topic, /topic\.id === "algorithms"/);
+  assert.match(detail, /topic\.id === "algorithms"/);
+});
+test("language cards open a dedicated learning and research hub", () => {
+  const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+
+  assert.match(topic, /topic\.id === "languages"/);
+  assert.match(detail, /language-learning-page/);
+  assert.match(detail, /language-learning-sidebar/);
+  assert.match(detail, /learning-research/);
+  assert.match(detail, /learning-hub\.module\.css/);
+});
+test("languages catalog covers popular languages and frameworks", async () => {
+  const { docsArticles } = await import(pathToFileURL(resolve("app/docs-data.ts")).href);
+  const languages = docsArticles.filter((article) => article.topic === "languages");
+  const titles = languages.map((article) => article.title.en).join(" ");
+
+  assert.ok(languages.length >= 32, `Expected at least 32 language cards, received ${languages.length}`);
+  for (const keyword of ["Python", "Java", "C#", "Go", "Rust", "React", "Vue", "Angular", "Next.js", "Node.js", "Laravel", "Flutter"]) assert.match(titles, new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.ok(languages.some((article) => article.status === "planned"));
+});
+test("docs topic heading uses compact Vietnamese typography", () => {
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+
+  assert.match(styles, /:global\(\.docs-topic-heading h1\)\s*\{[^}]*font-family:\s*var\(--font-vietnamese\)[^}]*font-size:\s*clamp\(30px,\s*3\.6vw,\s*44px\)/s);
+  assert.match(styles, /:global\(\.docs-topic-heading\)\s*\{[^}]*padding:\s*20px/s);
+});
+test("foundation catalog uses three desktop columns", () => {
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+
+  assert.match(styles, /:global\(\.docs-topic-list\)\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/s);
+  assert.doesNotMatch(styles, /@media \(max-width: 1100px\)[\s\S]*:global\(\.docs-topic-list\)\s*\{\s*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+});
+test("foundations catalog lists a substantial set of planned guides", async () => {
+  const { docsArticles } = await import(pathToFileURL(resolve("app/docs-data.ts")).href);
+  const topicPage = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const foundations = docsArticles.filter((article) => article.topic === "foundations");
+
+  assert.ok(foundations.length >= 30, `Expected at least 30 foundation cards, received ${foundations.length}`);
+  assert.ok(foundations.some((article) => article.status === "planned"));
+  assert.match(topicPage, /is-coming-soon/);
+  assert.match(topicPage, /Sắp bổ sung/);
+});
+test("docs uses Vietnamese typography and a compact hero", () => {
+  const blog = readFileSync(resolve("app/blog/page.tsx"), "utf8");
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  assert.match(blog, /Tài liệu lập trình/);
+  assert.doesNotMatch(blog, /docs-hero-note/);
+  assert.doesNotMatch(blog, /docs-results/);
+  assert.match(css, /body\{[^}]*font-family:var\(--font-vietnamese\)/);
+  assert.match(css, /\.docs-hero h1\{[^}]*font-family:var\(--font-vietnamese\)/);
+});
+test("header uses one sliding indicator for the current navigation route", () => {
+  const header = readFileSync(resolve("app/site-header.tsx"), "utf8");
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  assert.match(header, /usePathname/);
+  assert.match(header, /useLayoutEffect/);
+  assert.match(header, /ResizeObserver/);
+  assert.match(header, /nav-indicator/);
+  assert.match(header, /aria-current/);
+  assert.match(css, /\.site-header \.nav-links \{[^}]*position: relative/s);
+  assert.match(css, /\.site-header \.nav-indicator/);
+  assert.doesNotMatch(css, /\.site-header \.nav-links a::after/);
+});
+
+test("docs provides topic indexes and reusable detail routes", () => {
+  for (const path of ["app/docs-data.ts", "app/blog/docs-pages.module.css", "app/blog/[topic]/page.tsx", "app/blog/[topic]/[documentId]/page.tsx"]) assert.ok(existsSync(resolve(path)), path);
+  const hub = readFileSync(resolve("app/blog/page.tsx"), "utf8");
+  const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+
+  assert.match(hub, /docs-topic-card/);
+  assert.match(topic, /notFound/);
+  assert.match(topic, /docs-pages\.module\.css/);
+  assert.match(topic, /docs-topic-page/);
+  assert.match(detail, /docs-article/);
+  assert.match(detail, /docs-pages\.module\.css/);
+  assert.match(detail, /Event Loop/);
+  assert.match(styles, /:global\(\.docs-topic-page\)/);
+  assert.match(styles, /:global\(\.docs-article\)/);
 });

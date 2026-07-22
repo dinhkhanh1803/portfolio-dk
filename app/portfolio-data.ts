@@ -8,7 +8,7 @@ export const siteNav = [
   { href: "/projects", label: { vi: "Dự án", en: "Projects" } },
   { href: "/tools", label: { vi: "Công cụ", en: "Tools" } },
   { href: "/playground", label: { vi: "Trò chơi", en: "Games" } },
-  { href: "/blog", label: { vi: "Bài viết", en: "Blog" } },
+  { href: "/blog", label: { vi: "Tài liệu", en: "Docs" } },
   { href: "/contact", label: { vi: "Liên hệ", en: "Contact" } },
 ] as const;
 
