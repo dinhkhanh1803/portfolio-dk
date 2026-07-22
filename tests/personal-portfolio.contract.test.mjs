@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
+import postcss from "postcss";
 
 test("portfolio data covers all bilingual areas", async () => {
   const { portfolio, siteNav } = await import(pathToFileURL(resolve("app/portfolio-data.ts")).href);
@@ -129,6 +130,226 @@ test("docs hub replaces the full library with recently read documents", () => {
   assert.match(detail, /docs-recent-documents/);
   assert.match(detail, /localStorage\.setItem/);
 });
+test("docs article headings use the Vietnamese typeface", () => {
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+
+  assert.match(styles, /:global\(\.docs-article h1\)\s*\{[^}]*font-family:\s*var\(--font-vietnamese\)/s);
+  assert.match(styles, /:global\(\.docs-article h2\)\s*\{[^}]*font-family:\s*var\(--font-vietnamese\)/s);
+  assert.doesNotMatch(styles, /:global\(\.docs-article h[12]\)[^}]*var\(--font-sora\)/s);
+});
+test("six foundation guides provide bilingual lessons, diagrams, code, and sources", () => {
+  const data = readFileSync(resolve("app/docs-data.ts"), "utf8");
+  const content = readFileSync(resolve("app/docs-detailed-content.ts"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+
+  for (const id of ["event-loop", "web-foundations", "git-workflow", "http-basics", "html-semantic", "css-cascade"]) assert.match(data, new RegExp(`"${id}"`));
+  assert.match(data, /detailedDocs/);
+  assert.match(content, /sources:/);
+  assert.match(content, /code:/);
+  assert.match(content, /diagram:/);
+  assert.match(detail, /detailedDocs/);
+  assert.match(detail, /docs-lesson-code/);
+  assert.match(detail, /DocsSourceFooter/);
+});
+test("next three foundation guides provide detailed bilingual content", () => {
+  const data = readFileSync(resolve("app/docs-data.ts"), "utf8");
+  const content = readFileSync(resolve("app/docs-detailed-content.ts"), "utf8");
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+
+  for (const id of ["responsive-design", "web-accessibility", "forms-validation"]) {
+    assert.match(data, new RegExp(`"${id}"`));
+    assert.match(content, new RegExp(`"${id}"[\\s\\S]*sections:`));
+  }
+  assert.match(content, /Responsive design is constraint design/);
+  assert.match(content, /Keyboard first/);
+  assert.match(content, /Validate twice, explain once/);
+  assert.match(detail, /DocsSourceFooter/);
+});
+
+test("nine foundation guides use distinct editorial formats and research-backed blocks", async () => {
+  const { detailedDocs } = await import(pathToFileURL(resolve("app/docs-data.ts")).href);
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+  const ids = ["event-loop", "web-foundations", "git-workflow", "http-basics", "html-semantic", "css-cascade", "responsive-design", "web-accessibility", "forms-validation"];
+  const formats = ids.map((id) => detailedDocs[id]?.format);
+
+  assert.equal(new Set(formats).size, ids.length, "Each guide needs its own editorial format");
+  for (const id of ids) {
+    const doc = detailedDocs[id];
+    assert.ok(doc?.promise?.vi && doc?.promise?.en, `${id} needs a bilingual reader promise`);
+    assert.ok(doc.sources.length >= 3, `${id} needs at least three primary sources`);
+    assert.ok(doc.sections.some((section) => section.items?.length), `${id} needs a scannable knowledge block`);
+    assert.ok(doc.sections.some((section) => section.code || section.compare), `${id} needs code or a concrete comparison`);
+  }
+  assert.match(detail, /docs-article-format/);
+  assert.match(detail, /docs-lesson-compare/);
+  assert.match(detail, /docs-lesson-items/);
+  assert.match(styles, /docs-article-format/);
+  assert.match(styles, /docs-lesson-compare/);
+});
+
+test("three advanced foundation guides use a separate creative learning experience", async () => {
+  const { creativeGuides } = await import(pathToFileURL(resolve("app/docs-creative-content.ts")).href);
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+  const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
+  const component = readFileSync(resolve("app/blog/creative-foundation-guide.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+  const ids = ["browser-rendering", "dom-events", "promises-async"];
+
+  for (const id of ids) assert.ok(creativeGuides[id], `${id} needs a creative guide`);
+  assert.equal(new Set(ids.map((id) => creativeGuides[id].mode)).size, 3);
+  assert.equal(creativeGuides["browser-rendering"].mode, "frame-lab");
+  assert.equal(creativeGuides["dom-events"].mode, "event-scene");
+  assert.equal(creativeGuides["promises-async"].mode, "async-control-room");
+  for (const id of ids) {
+    const guide = creativeGuides[id];
+    assert.ok(guide.sources.length >= 3, `${id} needs authoritative research sources`);
+    assert.ok(guide.stations.length >= 4, `${id} needs a substantial learning journey`);
+  }
+  assert.match(detail, /CreativeFoundationGuide/);
+  assert.match(topic, /creativeGuides/);
+  assert.match(topic, /!creativeGuides\[article\.id\]/);
+  assert.match(component, /creative-render-lab/);
+  assert.match(component, /creative-event-scene/);
+  assert.match(component, /creative-async-control-room/);
+  assert.match(component, /creative-simulation/);
+  assert.match(styles, /creative-guide/);
+  assert.match(styles, /creative-simulation/);
+});
+
+test("JavaScript errors, modules, and npm have distinct bilingual field guides", async () => {
+  const { creativeGuides } = await import(pathToFileURL(resolve("app/docs-creative-content.ts")).href);
+  const data = readFileSync(resolve("app/docs-data.ts"), "utf8");
+  const component = readFileSync(resolve("app/blog/creative-foundation-guide.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+  const expectedModes = {
+    "javascript-errors": "incident-desk",
+    "javascript-modules": "module-graph",
+    "npm-basics": "package-console",
+  };
+
+  for (const [id, mode] of Object.entries(expectedModes)) {
+    const guide = creativeGuides[id];
+    assert.equal(guide?.mode, mode, `${id} needs its own visual mode`);
+    assert.ok(guide?.thesis.vi && guide?.thesis.en, `${id} needs a bilingual thesis`);
+    assert.ok(guide?.stations.length >= 4, `${id} needs a substantial learning journey`);
+    assert.ok(guide?.stations.some((station) => station.code), `${id} needs a practical code example`);
+    assert.ok(guide?.sources.length >= 3, `${id} needs authoritative sources`);
+  }
+
+  assert.equal((styles.match(/creative-incident-desk/g) ?? []).length, 1, "New visual styles must not be duplicated inside media queries");
+  assert.doesNotThrow(() => postcss.parse(styles), "Docs stylesheet must remain valid CSS");
+  assert.match(data, /browser-rendering[^\]]*javascript-errors[^\]]*javascript-modules[^\]]*npm-basics/s);
+  assert.match(component, /IncidentDesk/);
+  assert.match(component, /ModuleGraph/);
+  assert.match(component, /PackageConsole/);
+  assert.match(styles, /creative-incident-desk/);
+  assert.match(styles, /creative-module-graph/);
+  assert.match(styles, /creative-package-console/);
+});
+test("environment, Git basics, and commit messages have distinct bilingual field guides", async () => {
+  const { creativeGuides } = await import(pathToFileURL(resolve("app/docs-creative-content.ts")).href);
+  const data = readFileSync(resolve("app/docs-data.ts"), "utf8");
+  const component = readFileSync(resolve("app/blog/creative-foundation-guide.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+  const expectedModes = {
+    "environment-variables": "config-vault",
+    "git-basics": "git-workbench",
+    "commit-messages": "history-ledger",
+  };
+
+  for (const [id, mode] of Object.entries(expectedModes)) {
+    const guide = creativeGuides[id];
+    assert.equal(guide?.mode, mode, `${id} needs its own visual mode`);
+    assert.ok(guide?.thesis.vi && guide?.thesis.en, `${id} needs a bilingual thesis`);
+    assert.ok(guide?.stations.length >= 4, `${id} needs four learning stages`);
+    assert.ok(guide?.stations.some((station) => station.code), `${id} needs a practical example`);
+    assert.ok(guide?.sources.length >= 3, `${id} needs authoritative sources`);
+  }
+
+  assert.match(data, /npm-basics[^\]]*environment-variables[^\]]*git-basics[^\]]*commit-messages/s);
+  assert.match(component, /ConfigVault/);
+  assert.match(component, /GitWorkbench/);
+  assert.match(component, /HistoryLedger/);
+  assert.match(styles, /creative-config-vault/);
+  assert.match(styles, /creative-git-workbench/);
+  assert.match(styles, /creative-history-ledger/);
+  assert.doesNotThrow(() => postcss.parse(styles));
+});
+test("pull requests, clean code, and debugging have distinct bilingual field guides", async () => {
+  const { creativeGuides } = await import(pathToFileURL(resolve("app/docs-creative-content.ts")).href);
+  const data = readFileSync(resolve("app/docs-data.ts"), "utf8");
+  const component = readFileSync(resolve("app/blog/creative-foundation-guide.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+  const expectedModes = {
+    "pull-requests": "review-room",
+    "clean-code": "change-budget",
+    "debugging-basics": "debug-lab",
+  };
+
+  for (const [id, mode] of Object.entries(expectedModes)) {
+    const guide = creativeGuides[id];
+    assert.equal(guide?.mode, mode, `${id} needs its own visual mode`);
+    assert.ok(guide?.thesis.vi && guide?.thesis.en, `${id} needs a bilingual thesis`);
+    assert.ok(guide?.stations.length >= 4, `${id} needs four learning stages`);
+    assert.ok(guide?.stations.some((station) => station.code), `${id} needs a practical example`);
+    assert.ok(guide?.sources.length >= 3, `${id} needs authoritative sources`);
+  }
+
+  assert.match(data, /commit-messages[^\]]*pull-requests[^\]]*clean-code[^\]]*debugging-basics/s);
+  assert.match(component, /ReviewRoom/);
+  assert.match(component, /ChangeBudget/);
+  assert.match(component, /DebugLab/);
+  assert.match(styles, /creative-review-room/);
+  assert.match(styles, /creative-change-budget/);
+  assert.match(styles, /creative-debug-lab/);
+  assert.doesNotThrow(() => postcss.parse(styles));
+});
+test("testing, REST APIs, and access control have distinct bilingual learning systems", async () => {
+  const { creativeGuides } = await import(pathToFileURL(resolve("app/docs-creative-content.ts")).href);
+  const data = readFileSync(resolve("app/docs-data.ts"), "utf8");
+  const component = readFileSync(resolve("app/blog/creative-foundation-guide.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+  const expectedModes = {
+    "testing-basics": "test-pyramid-lab",
+    "rest-api-basics": "api-contract-workshop",
+    "authentication-basics": "access-control-matrix",
+  };
+
+  for (const [id, mode] of Object.entries(expectedModes)) {
+    const guide = creativeGuides[id];
+    assert.equal(guide?.mode, mode, `${id} needs its own visual mode`);
+    assert.ok(guide?.thesis.vi && guide?.thesis.en, `${id} needs a bilingual thesis`);
+    assert.ok(guide?.stations.length >= 4, `${id} needs four learning stages`);
+    assert.ok(guide?.stations.some((station) => station.code), `${id} needs a practical example`);
+    assert.ok(guide?.sources.length >= 3, `${id} needs authoritative sources`);
+  }
+
+  assert.match(data, /debugging-basics[^\]]*testing-basics[^\]]*rest-api-basics[^\]]*authentication-basics/s);
+  assert.match(component, /TestPyramidLab/);
+  assert.match(component, /ApiContractWorkshop/);
+  assert.match(component, /AccessControlMatrix/);
+  assert.match(styles, /creative-test-pyramid-lab/);
+  assert.match(styles, /creative-api-contract-workshop/);
+  assert.match(styles, /creative-access-control-matrix/);
+  assert.doesNotThrow(() => postcss.parse(styles));
+});
+test("docs remove quick practice and share one synchronized source footer", () => {
+  const detail = readFileSync(resolve("app/blog/[topic]/[documentId]/page.tsx"), "utf8");
+  const creative = readFileSync(resolve("app/blog/creative-foundation-guide.tsx"), "utf8");
+  const footer = readFileSync(resolve("app/blog/docs-source-footer.tsx"), "utf8");
+  const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
+
+  assert.doesNotMatch(detail, /quickPracticeByLanguage|docs-lesson-practice|docs-lesson-sources|Quick practice|Áp dụng nhanh/);
+  assert.doesNotMatch(detail, /Continue learning|Tiếp theo/);
+  assert.match(detail, /<DocsSourceFooter/);
+  assert.match(creative, /<DocsSourceFooter/);
+  assert.match(footer, /docs-source-footer/);
+  assert.match(styles, /docs-source-footer/);
+  assert.doesNotMatch(styles, /docs-lesson-practice|docs-lesson-sources/);
+  assert.doesNotMatch(styles, /creative-sources/);
+});
+
 test("languages docs provide compact heading and learning-discipline filters", () => {
   const topic = readFileSync(resolve("app/blog/[topic]/page.tsx"), "utf8");
   const styles = readFileSync(resolve("app/blog/docs-pages.module.css"), "utf8");
@@ -242,7 +463,7 @@ test("docs provides topic indexes and reusable detail routes", () => {
   assert.match(topic, /docs-topic-page/);
   assert.match(detail, /docs-article/);
   assert.match(detail, /docs-pages\.module\.css/);
-  assert.match(detail, /Event Loop/);
+  assert.match(readFileSync(resolve("app/docs-data.ts"), "utf8"), /Event Loop/);
   assert.match(styles, /:global\(\.docs-topic-page\)/);
   assert.match(styles, /:global\(\.docs-article\)/);
 });

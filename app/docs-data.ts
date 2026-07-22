@@ -3,7 +3,11 @@ export type DocsTopicId = "foundations" | "languages" | "algorithms" | "tools";
 export type Localized = Record<DocsLanguage, string>;
 
 export type DocsTopic = { id: DocsTopicId; accent: "teal" | "coral" | "gold" | "sky"; label: Localized; description: Localized };
-export type DocsArticle = { id: string; topic: DocsTopicId; level: "beginner" | "all" | "intermediate"; title: Localized; description: Localized; tags: string[]; sections?: { heading: Localized; body: Localized }[]; flow?: string[]; status?: "published" | "planned" };
+export type DocsLesson = { heading: Localized; body: Localized; kicker?: Localized; items?: Localized[]; diagram?: string[]; compare?: { left: Localized; right: Localized; leftItems: Localized[]; rightItems: Localized[] }; code?: { language: string; value: string }; note?: Localized };
+export type DocsSource = { label: string; href: string };
+export type DetailedDoc = { format: string; promise: Localized; sections: DocsLesson[]; sources: DocsSource[]; flow?: string[] };
+export type DocsArticle = { id: string; topic: DocsTopicId; level: "beginner" | "all" | "intermediate"; title: Localized; description: Localized; tags: string[]; sections?: DocsLesson[]; flow?: string[]; status?: "published" | "planned" };
+export { detailedDocs } from "./docs-detailed-content.ts";
 
 export const docsTopics: DocsTopic[] = [
   { id: "foundations", accent: "teal", label: { vi: "Nền tảng", en: "Foundations" }, description: { vi: "Khái niệm web, Git và tư duy viết mã bền vững.", en: "Web concepts, Git, and durable coding habits." } },
@@ -153,7 +157,7 @@ export const docsArticles: DocsArticle[] = [
   { id: "web-foundations", topic: "foundations", level: "beginner", title: { vi: "Web hoạt động như thế nào?", en: "How does the web work?" }, description: { vi: "Từ trình duyệt, HTTP đến cách một trang web hiển thị nội dung.", en: "From browsers and HTTP to how a page renders content." }, tags: ["HTTP", "Browser", "HTML"] },
   { id: "git-workflow", topic: "foundations", level: "all", title: { vi: "Git workflow không gây rối", en: "A Git workflow that stays clear" }, description: { vi: "Commit nhỏ, nhánh tính năng và cách đọc lịch sử dự án.", en: "Small commits, feature branches, and reading project history." }, tags: ["Git", "Workflow"] },
   { id: "http-basics", topic: "foundations", level: "beginner", title: { vi: "HTTP thực hành", en: "Practical HTTP" }, description: { vi: "Methods, status codes, headers và quy ước API dễ dùng.", en: "Methods, status codes, headers, and useful API conventions." }, tags: ["HTTP", "API"] },
-  ...plannedFoundationArticles,
+  ...plannedFoundationArticles.map((article) => (["browser-rendering", "dom-events", "promises-async", "javascript-errors", "javascript-modules", "npm-basics", "environment-variables", "git-basics", "commit-messages", "pull-requests", "clean-code", "debugging-basics", "testing-basics", "rest-api-basics", "authentication-basics"].includes(article.id) ? { ...article, status: "published" as const } : article)),
   ...plannedLanguageArticles,
   { id: "typescript-mental-model", topic: "languages", level: "intermediate", title: { vi: "Tư duy TypeScript thực dụng", en: "A practical TypeScript mental model" }, description: { vi: "Kiểu dữ liệu giúp làm rõ ý định và giảm lỗi khi thay đổi mã.", en: "Types clarify intent and reduce mistakes as code changes." }, tags: ["TypeScript", "Types"] },
   { id: "react-state", topic: "languages", level: "beginner", title: { vi: "State trong React", en: "State in React" }, description: { vi: "Phân biệt state, props và trường hợp không cần state.", en: "Separate state from props and recognise when state is unnecessary." }, tags: ["React", "State"] },

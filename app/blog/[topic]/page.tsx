@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, Clock3 } from "lucide-react";
 import { notFound, useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { docsArticles, getTopic, levelLabel, type DocsLanguage } from "../../docs-data";
+import { detailedDocs, docsArticles, getTopic, levelLabel, type DocsLanguage } from "../../docs-data";
+import { creativeGuides } from "../../docs-creative-content";
 import { useLanguage } from "../../language-provider";
 
 const languageFilters = [
@@ -38,7 +39,7 @@ export default function DocsTopicPage() {
     {topic.id === "languages" && <nav className="docs-topic-filters" aria-label={t === "vi" ? "Lọc tài liệu theo chuyên môn" : "Filter documentation by discipline"}>{languageFilters.map((filter) => <button key={filter.id} type="button" className={activeFilter === filter.id ? "is-active" : ""} aria-pressed={activeFilter === filter.id} onClick={() => setActiveFilter(filter.id)}>{filter.label[t]}</button>)}</nav>}
     <section className="docs-topic-list">
       {filteredArticles.map((article) => {
-        const isPlanned = article.status === "planned" || !article.sections;
+        const isPlanned = (article.status === "planned" || !article.sections) && !detailedDocs[article.id] && !creativeGuides[article.id];
         const opensLearningHub = topic.id === "languages" || topic.id === "algorithms" || topic.id === "tools";
         const content = <><div><span>{isPlanned ? (t === "vi" ? "Sắp bổ sung" : "Coming soon") : levelLabel[article.level][t]}</span>{isPlanned ? <Clock3 size={17} /> : <ArrowRight size={17} />}</div><h2>{article.title[t]}</h2><p>{article.description[t]}</p><ul>{article.tags.map((tag) => <li key={tag}>{tag}</li>)}</ul><strong>{opensLearningHub ? (t === "vi" ? "Mở learning hub" : "Open learning hub") : isPlanned ? (t === "vi" ? "Đang biên soạn" : "In progress") : <>{t === "vi" ? "Đọc tài liệu" : "Read guide"} <ArrowRight size={15} /></>}</strong></>;
         return isPlanned && !opensLearningHub ? <article key={article.id} className="docs-topic-resource is-coming-soon">{content}</article> : <Link key={article.id} className="docs-topic-resource" href={`/blog/${topic.id}/${article.id}`}>{content}</Link>;
