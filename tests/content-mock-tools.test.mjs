@@ -38,11 +38,15 @@ test("content and mock data collection uses a dedicated five-tab workbench", () 
   assert.match(css, /\.content-mock-workbench/);
 });
 test("theme tokens keep controls, active states, and dropdowns readable", () => {
+  const workbench = readFileSync(resolve("app/tools/config-file-workbench.tsx"), "utf8");
   const css = readFileSync(resolve("app/globals.css"), "utf8");
   assert.match(css, /--control-surface:/);
   assert.match(css, /--control-text:/);
   assert.match(css, /button\.is-active\{[^}]*color:var\(--control-on-ink\)/);
   assert.match(css, /select,option\{[^}]*color:var\(--control-text\)/);
   assert.match(css, /\[data-theme="dark"\] \.header-cta,\[data-theme="dark"\] \.button-primary/);
+  assert.match(css, /\[data-theme="dark"\] \.config-template-grid button\.is-active\{background:var\(--teal\);color:var\(--control-on-accent\);/);
+  assert.match(css, /\[data-theme="dark"\] \.tools-sidebar-title,\[data-theme="dark"\] \.tools-nav-item\.is-active\{color:var\(--control-on-accent\)}/);
+  assert.match(workbench, /style=\{selected\.includes\(template\) \? \{ backgroundColor: "var\(--teal\)", color: "var\(--control-on-accent\)", borderColor: "transparent" \} : undefined\}/);
   assert.doesNotMatch(css, /background:var\(--navy\)/);
 });
