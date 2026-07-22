@@ -1,0 +1,41 @@
+:global(.fmt-workbench) { container-type: inline-size; width: 100%; min-width: 0; display: grid; gap: 14px; padding: 0 14px 30px; }
+:global(.fmt-intro) { display: grid; gap: 4px; }
+:global(.fmt-intro h2), :global(.fmt-card h3), :global(.fmt-card h4) { margin: 0; }
+:global(.fmt-intro p), :global(.fmt-note) { margin: 0; color: var(--muted); line-height: 1.55; }
+:global(.fmt-tabs), :global(.fmt-toolbar), :global(.fmt-actions), :global(.fmt-inline), :global(.fmt-options), :global(.fmt-chips), :global(.fmt-copy-row), :global(.fmt-table-actions) { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+:global(.fmt-tabs) { border: 1px solid var(--line); border-radius: 14px; padding: 7px; background: color-mix(in srgb, var(--surface) 92%, transparent); }
+:global(.fmt-tab), :global(.fmt-button), :global(.fmt-chip) { min-height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+:global(.fmt-tab[aria-pressed="true"]), :global(.fmt-button--primary) { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+:global(.fmt-tab:hover), :global(.fmt-button:hover), :global(.fmt-chip:hover) { border-color: var(--accent); }
+:global(.fmt-card) { min-width: 0; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); padding: 16px; }
+:global(.fmt-card--controls) { display: grid; gap: 14px; }
+:global(.fmt-grid) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; min-width: 0; }
+:global(.fmt-field) { display: grid; gap: 6px; min-width: 0; color: var(--muted); font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+:global(.fmt-field input), :global(.fmt-field select), :global(.fmt-field textarea), :global(.fmt-code), :global(.fmt-textarea) { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); padding: 11px 12px; font: 500 .9rem/1.5 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+:global(.fmt-textarea) { resize: vertical; min-height: 280px; }
+:global(.fmt-code) { min-height: 280px; margin: 0; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+:global(.fmt-card__heading) { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+:global(.fmt-status) { border-radius: 10px; padding: 10px 12px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--ink); font-weight: 700; }
+:global(.fmt-status--error) { background: color-mix(in srgb, #e5484d 14%, transparent); }
+:global(.fmt-table-wrap) { overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+:global(.fmt-table) { width: 100%; border-collapse: collapse; font-size: .9rem; }
+:global(.fmt-table th), :global(.fmt-table td) { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+:global(.fmt-table th) { background: color-mix(in srgb, var(--surface) 70%, var(--accent) 8%); }
+:global(.fmt-empty) { display: grid; min-height: 280px; place-items: center; color: var(--muted); text-align: center; }
+:global(.fmt-check) { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); cursor: pointer; }
+:global([data-theme="dark"] .fmt-workbench) :global(.fmt-tab[aria-pressed="true"]), :global([data-theme="dark"] .fmt-workbench) :global(.fmt-button--primary) { background: var(--accent); border-color: var(--accent); color: #06282a; }
+@container (max-width: 760px) { :global(.fmt-workbench) { padding-inline: 8px; } :global(.fmt-grid) { grid-template-columns: minmax(0, 1fr); } :global(.fmt-card) { padding: 13px; } :global(.fmt-textarea), :global(.fmt-code), :global(.fmt-empty) { min-height: 220px; } }
+:global(.fmt-intro > span), :global(.fmt-card > header), :global(.fmt-output > header), :global(.fmt-reference) { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+:global(.fmt-intro > span) { color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+:global(.fmt-tabs button), :global(.fmt-toolbar button), :global(.fmt-output button) { min-height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+:global(.fmt-tabs button.is-active), :global(.fmt-toolbar button.fmt-primary) { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+:global(.fmt-toolbar label) { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 700; }
+:global(.fmt-toolbar select) { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 6px 9px; font: inherit; }
+:global(.fmt-card > header) { margin-bottom: 10px; color: var(--muted); font-size: .8rem; }
+:global(.fmt-card > header strong) { color: var(--ink); font-size: .88rem; }
+:global(.fmt-card textarea) { width: 100%; min-height: 280px; box-sizing: border-box; resize: vertical; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); padding: 11px 12px; font: 500 .9rem/1.5 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+:global(.fmt-output pre) { min-height: 280px; box-sizing: border-box; margin: 0; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); padding: 11px 12px; white-space: pre-wrap; word-break: break-word; font: 500 .9rem/1.5 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+:global(.fmt-output pre.is-error) { color: #c3282e; background: color-mix(in srgb, #e5484d 10%, var(--surface)); }
+:global(.fmt-reference) { align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); }
+:global(.fmt-reference code) { display: block; white-space: pre-line; color: var(--muted); }
+:global([data-theme="dark"] .fmt-workbench) :global(.fmt-tabs button.is-active), :global([data-theme="dark"] .fmt-workbench) :global(.fmt-toolbar button.fmt-primary) { background: var(--accent); border-color: var(--accent); color: #06282a; }
