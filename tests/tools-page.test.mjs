@@ -24,3 +24,11 @@ test("tools sidebar keeps its scroll position while changing tool collections", 
   assert.match(page, /rememberSidebarScroll\(\);\s*router\.push/);
   assert.doesNotMatch(dynamicPage, /key=\{params\.collectionId\}/);
 });
+test("tools sidebar dark theme keeps every navigation label readable", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  assert.ok(css.includes('[data-theme="dark"] .tools-sidebar{--tools-sidebar-text:#eaf7f5;--tools-sidebar-muted:#b7cbc8}'));
+  assert.ok(css.includes('[data-theme="dark"] .tools-sidebar .tools-nav-item{color:var(--tools-sidebar-text)}'));
+  assert.ok(css.includes('[data-theme="dark"] .tools-sidebar .tools-group-heading{color:var(--tools-sidebar-muted)}'));
+  assert.ok(css.includes('[data-theme="dark"] .tools-sidebar-title,[data-theme="dark"] .tools-nav-item.is-active{color:var(--control-on-accent)}'));
+});

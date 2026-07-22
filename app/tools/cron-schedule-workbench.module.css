@@ -1,0 +1,52 @@
+.scope{display:contents}
+:global(.cron-workbench){container-type:inline-size;width:100%;min-width:0;display:grid;gap:16px;padding:0 14px 30px}
+:global(.cron-tabs){display:flex!important;flex-wrap:wrap!important;gap:6px!important;overflow:visible!important}
+:global(.cron-tabs button){flex:0 1 auto!important}
+:global(.cron-intro){display:grid;gap:5px;padding:2px 1px 0}
+:global(.cron-intro h2),:global(.cron-intro p){margin:0}
+:global(.cron-intro h2){font-size:24px;letter-spacing:-.04em}
+:global(.cron-intro p){max-width:780px;color:var(--muted);font-size:13px;line-height:1.55}
+:global(.cron-presets){display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+:global(.cron-presets>span){width:100%;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+:global(.cron-presets button),:global(.cron-copy),:global(.cron-runs header button){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.62);color:var(--ink);font-size:11px;font-weight:850;cursor:pointer}
+:global(.cron-presets button:hover){border-color:var(--teal);color:var(--teal)}
+:global(.cron-expression-card),:global(.cron-summary),:global(.cron-runs),:global(.cron-breakdown article){border:1px solid var(--line);border-radius:15px;background:rgba(255,253,248,.58);box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+:global(.cron-expression-card){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;padding:14px}
+:global(.cron-expression-card>div){display:grid;gap:7px}
+:global(.cron-expression-card label){color:var(--ink);font-size:11px;font-weight:850;letter-spacing:.04em;text-transform:uppercase}
+:global(.cron-expression-card input),:global(.cron-fields input){width:100%;min-width:0;height:40px;padding:0 11px;border:1px solid var(--line);border-radius:10px;outline:0;background:rgba(255,255,255,.72);color:var(--ink);font:800 13px ui-monospace,SFMono-Regular,Consolas,monospace}
+:global(.cron-expression-card input:focus),:global(.cron-fields input:focus){border-color:var(--teal);box-shadow:0 0 0 3px rgba(20,125,122,.1)}
+:global(.cron-expression-card small){color:var(--muted);font-size:10px}
+:global(.cron-copy){height:40px;background:var(--teal);border-color:transparent;color:#fff}
+:global(.cron-fields){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+:global(.cron-fields label){display:grid;gap:7px;min-width:0;padding:11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,253,248,.48)}
+:global(.cron-fields span){display:flex;justify-content:space-between;gap:6px;color:var(--ink);font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+:global(.cron-fields span small){color:var(--muted);font-size:9px}
+:global(.cron-summary){display:flex;align-items:flex-start;gap:10px;padding:13px;color:#176e55;background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.28)}
+:global(.cron-summary.is-error){color:#a53d2e;background:rgba(239,114,95,.08);border-color:rgba(239,114,95,.3)}
+:global(.cron-summary strong){font-size:13px}
+:global(.cron-summary p){margin:3px 0 0;font-size:11px;line-height:1.45}
+:global(.cron-breakdown){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+:global(.cron-breakdown article){display:grid;gap:7px;min-width:0;padding:12px}
+:global(.cron-breakdown span){color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+:global(.cron-breakdown code){justify-self:start;padding:5px 7px;border-radius:7px;background:rgba(20,125,122,.1);color:var(--teal);font:800 13px ui-monospace,SFMono-Regular,Consolas,monospace}
+:global(.cron-breakdown p){min-height:30px;margin:0;color:var(--ink);font-size:11px;line-height:1.4}
+:global(.cron-breakdown small){color:var(--muted);font-size:10px}
+:global(.cron-runs){padding:0;overflow:hidden}
+:global(.cron-runs header){display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+:global(.cron-runs header div){display:grid;gap:3px}
+:global(.cron-runs header strong){font-size:13px}
+:global(.cron-runs header small){color:var(--muted);font-size:10px}
+:global(.cron-runs header button){min-height:30px;background:rgba(255,255,255,.62)}
+:global(.cron-runs ol){display:grid;gap:0;margin:0;padding:0;list-style:none}
+:global(.cron-runs li){display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--ink);font:800 12px ui-monospace,SFMono-Regular,Consolas,monospace}
+:global(.cron-runs li:last-child){border-bottom:0}
+:global(.cron-runs li svg){color:var(--teal)}
+:global(.cron-runs>p){padding:14px;margin:0;color:var(--muted);font-size:12px}
+:global([data-theme="dark"] .cron-expression-card),:global([data-theme="dark"] .cron-summary),:global([data-theme="dark"] .cron-runs),:global([data-theme="dark"] .cron-breakdown article),:global([data-theme="dark"] .cron-fields label){border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.055);box-shadow:none}
+:global([data-theme="dark"] .cron-expression-card input),:global([data-theme="dark"] .cron-fields input),:global([data-theme="dark"] .cron-presets button),:global([data-theme="dark"] .cron-runs header button){background:var(--control-surface);color:var(--control-text);border-color:var(--line)}
+:global([data-theme="dark"] .cron-copy){background:var(--teal);color:var(--control-on-accent);border-color:transparent}
+:global([data-theme="dark"] .cron-summary){background:rgba(34,197,94,.1);color:#a5ebce}
+:global([data-theme="dark"] .cron-summary.is-error){color:#ffc5bb}
+@container(max-width:700px){:global(.cron-fields),:global(.cron-breakdown){grid-template-columns:repeat(2,minmax(0,1fr))}:global(.cron-breakdown article:last-child){grid-column:1/-1}}
+@media(max-width:760px){:global(.cron-workbench){padding-inline:10px}:global(.cron-tabs){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}:global(.cron-tabs button){width:100%!important}:global(.cron-expression-card){grid-template-columns:1fr}:global(.cron-copy){width:100%}:global(.cron-fields),:global(.cron-breakdown){grid-template-columns:1fr}:global(.cron-breakdown article:last-child){grid-column:auto}}
