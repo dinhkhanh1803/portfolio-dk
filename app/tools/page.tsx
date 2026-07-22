@@ -18,6 +18,7 @@ import NumberToolsWorkbench from "./number-tools-workbench";
 import UnitToolsWorkbench from "./unit-tools-workbench";
 import DateTimeWorkbench from "./date-time-workbench";
 import CssToolsWorkbench from "./css-tools-workbench";
+import CssUtilitiesWorkbench from "./css-utilities-workbench";
 
 type ToolCollection = {
   id: string;
@@ -48,8 +49,8 @@ const groups: ToolGroup[] = [
     { id: "animations", label: "CSS Animations", icon: Zap, tools: ["CSS Animation Generator", "CSS Keyframe Animator", "CSS Transition Generator", "CSS Transform Generator", "CSS 3D Transform", "CSS Perspective Generator", "Cubic Bezier Editor", "CSS Easing Editor", "CSS Scroll Snap Generator", "CSS Scroll Timeline Generator", "CSS Typing Effect Generator", "CSS Loader Generator"] },
     { id: "typography", label: "CSS Typography", icon: Type, tools: ["CSS Text Effects", "CSS Type Scale Generator", "CSS Font-Face Generator", "CSS Font Stack Generator", "CSS Line Clamp Generator", "CSS Letter Spacing Generator", "Text Wrap Generator", "CSS Writing Mode Generator"] },
     { id: "shapes-borders", label: "CSS Shapes & Borders", icon: Crop, tools: ["Border Radius Generator", "CSS Border Generator", "CSS Outline Generator", "Clip-path Generator", "CSS Clip-path Shapes", "CSS Triangle Generator", "CSS Object Fit Generator", "CSS Scrollbar Generator"] },
-    { id: "component-generators", label: "CSS Component Generators", icon: WandSparkles, tools: ["Button Generator", "Card Generator", "Loader Generator", "Toggle Generator"] },
-    { id: "css-utilities", label: "CSS Utilities", icon: SlidersHorizontal, tools: ["CSS Minifier", "Prefix Helper", "Specificity Calculator"] },
+    { id: "component-generators", label: "CSS Component Generators", icon: WandSparkles, tools: ["CSS Button Generator", "CSS Neon Button Generator", "CSS Card Generator", "CSS Tooltip Generator", "CSS Toggle Switch", "CSS Cursor Generator", "CSS Pointer Events Generator", "CSS Accent Color Generator"] },
+    { id: "css-utilities", label: "CSS Utilities", icon: SlidersHorizontal, tools: ["CSS Variable Generator", "CSS @supports Generator", "CSS Specificity Calculator", "CSS Box Model Visualizer", "Tailwind Config Generator"] },
   ]},
   { id: "generators", label: "Generators", collections: [
     { id: "id-random", label: "ID & Random Generators", icon: Fingerprint, tools: ["UUID Generator", "Nano ID", "Random Number", "Random String"] },
@@ -228,9 +229,9 @@ const searchResults = useMemo(() => {
           </section> : <section className="tools-recent"><h2>{t.recent}</h2><div>{recent.map((name) => <button key={name} onClick={() => openRecentTool(name)}><Link2 size={15} />{name}</button>)}</div></section>}
         </>}
 
-        {collectionId && <>
+        {collectionId && <div className="tools-detail-scroll">
           <div className="tools-breadcrumb"><button onClick={() => { rememberSidebarScroll(); router.push("/tools"); }}>Tools</button><span>/</span><span>{activeCollection.group}</span><span>/</span><strong>{currentTool}</strong></div>
-          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : activeCollection.id === "color-tools" ? <CssToolsWorkbench key="color-tools" collectionId="color-tools" /> : activeCollection.id === "gradients-patterns" ? <CssToolsWorkbench key="gradients-patterns" collectionId="gradients-patterns" /> : activeCollection.id === "shadows-effects" ? <CssToolsWorkbench key="shadows-effects" collectionId="shadows-effects" /> : activeCollection.id === "layout-tools" ? <CssToolsWorkbench key="layout-tools" collectionId="layout-tools" /> : activeCollection.id === "animations" ? <CssToolsWorkbench key="animations" collectionId="animations" /> : activeCollection.id === "typography" ? <CssToolsWorkbench key="typography" collectionId="typography" /> : activeCollection.id === "shapes-borders" ? <CssToolsWorkbench key="shapes-borders" collectionId="shapes-borders" /> : <section className="tool-workspace">
+          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : activeCollection.id === "color-tools" ? <CssToolsWorkbench key="color-tools" collectionId="color-tools" /> : activeCollection.id === "gradients-patterns" ? <CssToolsWorkbench key="gradients-patterns" collectionId="gradients-patterns" /> : activeCollection.id === "shadows-effects" ? <CssToolsWorkbench key="shadows-effects" collectionId="shadows-effects" /> : activeCollection.id === "layout-tools" ? <CssToolsWorkbench key="layout-tools" collectionId="layout-tools" /> : activeCollection.id === "animations" ? <CssToolsWorkbench key="animations" collectionId="animations" /> : activeCollection.id === "typography" ? <CssToolsWorkbench key="typography" collectionId="typography" /> : activeCollection.id === "shapes-borders" ? <CssToolsWorkbench key="shapes-borders" collectionId="shapes-borders" /> : activeCollection.id === "component-generators" ? <CssToolsWorkbench key="component-generators" collectionId="component-generators" /> : activeCollection.id === "css-utilities" ? <CssUtilitiesWorkbench /> : <section className="tool-workspace">
             <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={currentTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
             <div className="tool-runner">
               <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${currentTool}...`} /></label>
@@ -238,7 +239,7 @@ const searchResults = useMemo(() => {
               <label><span>{t.output}</span><textarea value={output} readOnly placeholder="Your result appears here..." /></label>
             </div>
           </section>}
-        </>}
+        </div>}
       </section>
     </main>
   );

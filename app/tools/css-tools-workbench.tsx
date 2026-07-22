@@ -1,11 +1,12 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { Check, Clipboard, Shuffle } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { animationCss, backdropFilterCss, borderCss, borderRadiusCss, clipPathCss, colorFormats, contrastRatio, filterCss, filterValue, fontFaceCss, fontStackCss, glassmorphismCss, gradientCss, gridCss, hexToRgb, letterSpacingCss, lineClampCss, maskCss, mixBlendCss, neumorphismCss, objectFitCss, outlineCss, rgbToHex, scrollbarCss, shadowCss, textEffectCss, textShadowCss, textWrapCss, triangleCss, typeScaleCss, writingModeCss } from "./css-tools-engine";
 
-type CssCollectionId = "color-tools" | "gradients-patterns" | "shadows-effects" | "layout-tools" | "animations" | "typography" | "shapes-borders";
+type CssCollectionId = "color-tools" | "gradients-patterns" | "shadows-effects" | "layout-tools" | "animations" | "typography" | "shapes-borders" | "component-generators";
 type Props = { collectionId: CssCollectionId };
 const tabs: Record<CssCollectionId, string[]> = {
   "color-tools": ["Color Format Converter", "Color Name Finder", "Image Color Picker", "CSS Contrast Checker", "Color Contrast Grid", "Color Palette AI", "Color Scheme Generator"],
@@ -15,10 +16,19 @@ const tabs: Record<CssCollectionId, string[]> = {
   animations: ["CSS Animation Generator", "CSS Keyframe Animator", "CSS Transition Generator", "CSS Transform Generator", "CSS 3D Transform", "CSS Perspective Generator", "Cubic Bezier Editor", "CSS Easing Editor", "CSS Scroll Snap Generator", "CSS Scroll Timeline Generator", "CSS Typing Effect Generator", "CSS Loader Generator"],
   typography: ["CSS Text Effects", "CSS Type Scale Generator", "CSS Font-Face Generator", "CSS Font Stack Generator", "CSS Line Clamp Generator", "CSS Letter Spacing Generator", "Text Wrap Generator", "CSS Writing Mode Generator"],
   "shapes-borders": ["Border Radius Generator", "CSS Border Generator", "CSS Outline Generator", "Clip-path Generator", "CSS Clip-path Shapes", "CSS Triangle Generator", "CSS Object Fit Generator", "CSS Scrollbar Generator"],
+  "component-generators": ["CSS Button Generator", "CSS Neon Button Generator", "CSS Card Generator", "CSS Tooltip Generator", "CSS Toggle Switch", "CSS Cursor Generator", "CSS Pointer Events Generator", "CSS Accent Color Generator"],
 };
 const palettes = [["#ff6b6b", "#ffd93d", "#6bcb77"], ["#22d3ee", "#3b82f6", "#0f172a"], ["#7c3aed", "#60a5fa", "#f0abfc"], ["#0f172a", "#2dd4bf", "#f8fafc"], ["#f97316", "#ec4899", "#8b5cf6"]];
 const colorNames = [{ name: "Royal Blue", hex: "#3b82f6" }, { name: "Emerald", hex: "#10b981" }, { name: "Rose", hex: "#f43f5e" }, { name: "Slate", hex: "#0f172a" }, { name: "Amber", hex: "#f59e0b" }];
 const gradients = ["linear", "radial", "conic"] as const;
+const pointerEvents = ["auto", "none", "visiblePainted", "visibleFill", "visibleStroke", "visible", "painted", "fill", "stroke", "all", "inherit"] as const;
+const cursorCategories = [
+  { label: "General", values: ["auto", "default", "none", "context-menu", "help", "pointer", "progress", "wait"] },
+  { label: "Selection", values: ["cell", "crosshair", "text", "vertical-text"] },
+  { label: "Drag & Drop", values: ["alias", "copy", "move", "no-drop", "not-allowed", "grab", "grabbing"] },
+  { label: "Resizing", values: ["all-scroll", "col-resize", "row-resize", "n-resize", "e-resize", "s-resize", "w-resize", "ne-resize", "nw-resize", "se-resize", "sw-resize", "ew-resize", "ns-resize", "nesw-resize", "nwse-resize"] },
+  { label: "Zooming", values: ["zoom-in", "zoom-out"] },
+];
 const copy = async (value: string, setCopied: (value: boolean) => void) => { await navigator.clipboard.writeText(value); setCopied(true); window.setTimeout(() => setCopied(false), 1300); };
 const gradientValue = (type: "linear" | "radial" | "conic", angle: number, colors: string[]) => gradientCss(type, angle, colors).replace("background: ", "").replace(";", "");
 const nearestColorName = (hex: string) => {
@@ -72,6 +82,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
   const [wrap, setWrap] = useState({ whiteSpace: "normal", overflow: "visible", width: 350, lineHeight: 1.5 });
   const [writing, setWriting] = useState({ mode: "horizontal-tb", direction: "ltr" as "ltr" | "rtl", orientation: "mixed" });
   const [shape, setShape] = useState({ radiusMode: "uniform", radius: 16, topLeft: 16, topRight: 16, bottomRight: 16, bottomLeft: 16, borderWidth: 3, borderStyle: "solid", borderColor: "#3b82f6", outlineWidth: 3, outlineStyle: "solid", outlineColor: "#f97316", outlineOffset: 6, clipShape: "hexagon", clipInset: 12, triangleDirection: "up" as "up" | "right" | "down" | "left", triangleWidth: 140, triangleHeight: 120, objectFit: "cover", objectPosition: "center", scrollbarSize: 12, scrollbarThumb: "#3b82f6", scrollbarTrack: "#e5e7eb", scrollbarRadius: 999 });
+  const [component, setComponent] = useState({ label: "Click me", neonColor: "#00ffff", backgroundMode: "gradient" as "solid" | "gradient", paddingX: 24, paddingY: 12, radius: 10, borderWidth: 2, glow: 18, hover: true, cardWidth: 320, cardPadding: 24, cardHeader: true, cardElevation: "md", tooltipText: "Hi there!", tooltipPosition: "top", toggleOn: true, toggleWidth: 52, toggleHeight: 28, cursor: "pointer", cursorSearch: "", cursorCategory: "All Categories", pointerEvent: "auto", accentColor: "#3b82f6" });
   const colorData = useMemo(() => colorFormats(hex, alpha), [alpha, hex]);
   const rgb = hexToRgb(hex);
   const activeTitle = active;
@@ -81,10 +92,128 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
   const transform3dValue = `rotateX(${animationLab.rotateX}deg) rotateY(${animationLab.rotateY}deg) rotateZ(${animationLab.rotateZ}deg) translateZ(${animationLab.translateZ}px) scale(${animationLab.scale3d})`;
   const typingEffectCss = `.typing-text {\n  overflow: hidden;\n  white-space: nowrap;\n  border-right: ${animationLab.typingCursor}px solid ${animationLab.typingColor};\n  animation: typing ${animationLab.typingDuration}ms steps(${Math.max(text.length, 1)}) forwards${animationLab.typingBlink ? `, blink .75s step-end infinite` : ""};\n  color: ${animationLab.typingColor};\n  background: ${animationLab.typingBackground};\n}\n\n@keyframes typing { from { width: 0; } to { width: ${Math.max(text.length, 1)}ch; } }${animationLab.typingBlink ? `\n@keyframes blink { 50% { border-color: transparent; } }` : ""}`;
   const loaderCss = `.loader {\n  width: ${animationLab.loaderSize}px;\n  height: ${animationLab.loaderSize}px;\n  color: ${animationLab.loaderColor};\n  animation: loader-spin ${animation.duration}ms linear infinite;\n}\n\n@keyframes loader-spin { to { transform: rotate(360deg); } }`;
-  const shapeRadius = shape.radiusMode === "uniform" ? { topLeft: shape.radius, topRight: shape.radius, bottomRight: shape.radius, bottomLeft: shape.radius, unit: "px" as const } : { topLeft: shape.topLeft, topRight: shape.topRight, bottomRight: shape.bottomRight, bottomLeft: shape.bottomLeft, unit: "px" as const };
+  const shapeRadius = useMemo(() => shape.radiusMode === "uniform" ? { topLeft: shape.radius, topRight: shape.radius, bottomRight: shape.radius, bottomLeft: shape.radius, unit: "px" as const } : { topLeft: shape.topLeft, topRight: shape.topRight, bottomRight: shape.bottomRight, bottomLeft: shape.bottomLeft, unit: "px" as const }, [shape]);
   const shapeClipPath = clipPathCss(shape.clipShape, shape.clipInset).replace("clip-path: ", "").replace(";", "");
   const trianglePreviewBorder = shape.triangleDirection === "up" ? { borderLeft: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderRight: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderBottom: `${shape.triangleHeight}px solid ${shape.borderColor}` } : shape.triangleDirection === "down" ? { borderLeft: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderRight: `${Math.round(shape.triangleWidth / 2)}px solid transparent`, borderTop: `${shape.triangleHeight}px solid ${shape.borderColor}` } : { borderTop: `${Math.round(shape.triangleHeight / 2)}px solid transparent`, borderBottom: `${Math.round(shape.triangleHeight / 2)}px solid transparent`, [shape.triangleDirection === "right" ? "borderLeft" : "borderRight"]: `${shape.triangleWidth}px solid ${shape.borderColor}` };
-  const css = useMemo(() => {
+  const componentShadow = `0 18px 35px rgba(99, 102, 241, ${component.glow / 100})`;
+  const buttonBackground = component.backgroundMode === "gradient" ? gradientValue("linear", angle, colors.slice(1, 3)) : colors[1];
+  const cardShadow = component.cardElevation === "none" ? "none" : component.cardElevation === "sm" ? "0 4px 12px rgba(15, 23, 42, 0.10)" : component.cardElevation === "lg" ? "0 18px 45px rgba(15, 23, 42, 0.16)" : "0 10px 28px rgba(15, 23, 42, 0.12)";
+  const componentHtml = useMemo(() => {
+    if (active.includes("Toggle")) return '<label class="toggle"><input type="checkbox" /><span class="toggle-track"></span></label>';
+    if (active.includes("Tooltip")) return `<button class="tooltip" data-tooltip="${component.tooltipText}">Hover me</button>`;
+    if (active.includes("Card")) return '<article class="custom-card"><div class="custom-card__header"></div><div class="custom-card__body"><h3>Card title</h3><p>Card description text.</p></div></article>';
+    return `<button class="custom-button">${component.label}</button>`;
+  }, [active, component.label, component.tooltipText]);
+  const componentCss = useMemo(() => {
+    if (active.includes("Neon")) return `.neon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 32px;
+  color: ${component.neonColor};
+  background: transparent;
+  border: ${component.borderWidth}px solid ${component.neonColor};
+  border-radius: ${component.radius}px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 6px ${component.neonColor};
+  box-shadow: 0 0 ${component.glow}px ${component.neonColor};
+}${component.hover ? `
+.neon-button:hover {
+  background: ${component.neonColor};
+  color: #050505;
+  box-shadow: 0 0 ${component.glow * 2}px ${component.neonColor};
+}` : ""}`;
+    if (active.includes("Card")) return `.custom-card {
+  width: ${component.cardWidth}px;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: ${component.radius + 6}px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: ${cardShadow};
+}${component.cardHeader ? `
+.custom-card__header {
+  height: 80px;
+  background: ${gradientValue("linear", angle, colors.slice(1, 3))};
+}` : ""}
+.custom-card__body {
+  padding: ${component.cardPadding}px;
+}`;
+    if (active.includes("Tooltip")) return `.tooltip {
+  position: relative;
+  display: inline-flex;
+}
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  ${component.tooltipPosition}: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #ffffff;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.tooltip:hover::after {
+  opacity: 1;
+}`;
+    if (active.includes("Toggle")) return `.toggle {
+  position: relative;
+  display: inline-block;
+  width: ${component.toggleWidth}px;
+  height: ${component.toggleHeight}px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: ${component.toggleHeight}px;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: background .25s ease;
+}
+.toggle-track::before {
+  content: "";
+  position: absolute;
+  width: ${component.toggleHeight - 6}px;
+  height: ${component.toggleHeight - 6}px;
+  top: 3px;
+  left: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  transition: transform .25s ease;
+}
+.toggle input:checked + .toggle-track { background: ${colors[1]}; }
+.toggle input:checked + .toggle-track::before { transform: translateX(${component.toggleWidth - component.toggleHeight}px); }`;
+    if (active.includes("Cursor")) return `cursor: ${component.cursor};`;
+    if (active.includes("Pointer")) return `pointer-events: ${component.pointerEvent};`;
+    if (active.includes("Accent")) return `accent-color: ${component.accentColor};`;
+    return `.custom-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${component.paddingY}px ${component.paddingX}px;
+  color: ${foreground};
+  background: ${buttonBackground};
+  border: ${component.borderWidth}px solid transparent;
+  border-radius: ${component.radius}px;
+  font-size: ${fontSize}px;
+  font-weight: ${fontWeight};
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: ${componentShadow};
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.custom-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 44px rgba(99, 102, 241, .35);
+}`;
+  }, [active, angle, buttonBackground, cardShadow, colors, component, componentShadow, fontSize, fontWeight, foreground]);  const css = useMemo(() => {
     if (collectionId === "color-tools") {
       if (active.includes("Name")) return `/* Closest color name */\n--${nearestColorName(hex).name.toLowerCase().replace(/\s+/g, "-")}: ${hex};`;
       if (active.includes("Contrast")) return `color: ${foreground};\nbackground: ${hex};\n/* Contrast ratio: ${contrastRatio(foreground, hex)} */`;
@@ -119,6 +248,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
       if (active.includes("Scrollbar")) return scrollbarCss({ size: shape.scrollbarSize, thumb: shape.scrollbarThumb, track: shape.scrollbarTrack, radius: shape.scrollbarRadius });
       return borderRadiusCss(shapeRadius);
     }
+    if (collectionId === "component-generators") return componentCss;
     if (collectionId === "typography") {
       const effect = active.includes("Neon") ? "neon" : active.includes("Glitch") ? "glitch" : active.includes("Stroke") ? "stroke" : "gradient";
       if (active.includes("Type Scale")) return typeScaleCss(scaleBase, scaleRatio, scaleAbove, scaleBelow, scaleUnit);
@@ -161,7 +291,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
       return animationCss(animation);
     }
     return animationCss(animation);
-  }, [active, animation, angle, blend.background, blend.foreground, blend.mode, collectionId, colorData, colors, effectFilters, fontFace, fontFamily, fontSize, fontStack, fontWeight, foreground, glass, gradientType, grid, hex, layout, letterSpacing, lineClamp, mask.color, mask.feather, mask.shape, mask.size, neumorphism, scaleAbove, scaleBase, scaleBelow, scaleRatio, scaleUnit, shadow, text, textShadowLayers, wrap, writing, animationLab, bezierValue, transformValue, transform3dValue, typingEffectCss, loaderCss, shape, shapeRadius]);
+  }, [active, animation, angle, blend.background, blend.foreground, blend.mode, collectionId, colorData, colors, componentCss, effectFilters, fontFace, fontFamily, fontSize, fontStack, fontWeight, foreground, glass, gradientType, grid, hex, layout, letterSpacing, lineClamp, mask.color, mask.feather, mask.shape, mask.size, neumorphism, scaleAbove, scaleBase, scaleBelow, scaleRatio, scaleUnit, shadow, text, textShadowLayers, wrap, writing, animationLab, bezierValue, transformValue, transform3dValue, typingEffectCss, loaderCss, shape, shapeRadius]);
 
   const setRgb = (channel: "r" | "g" | "b", value: number) => setHex(rgbToHex(channel === "r" ? value : rgb.r, channel === "g" ? value : rgb.g, channel === "b" ? value : rgb.b));
   const setRandomPalette = () => setColors([0, 1, 2].map(() => "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0")));
@@ -179,26 +309,26 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
 
   const renderColorNameFinder = () => <>
     <div className="css-field-row"><label>Enter a color (hex, rgb, or name)<input value={hex} onChange={(event) => setHex(event.target.value)} /></label><label>Preview<input type="color" value={hex} onChange={(event) => setHex(event.target.value)} /></label></div>
-    <div className="css-name-result"><i style={{ background: nearestColorName(hex).hex }} /><div><strong>{nearestColorName(hex).name}</strong><span>{nearestColorName(hex).hex} Ãƒâ€šÃ‚Â· distance {Math.round(nearestColorName(hex).distance)}</span></div><button onClick={() => copy(nearestColorName(hex).hex, setCopied)}>{copied ? <Check size={15} /> : <Clipboard size={15} />}</button></div>
+    <div className="css-name-result"><i style={{ background: nearestColorName(hex).hex }} /><div><strong>{nearestColorName(hex).name}</strong><span>{nearestColorName(hex).hex} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· distance {Math.round(nearestColorName(hex).distance)}</span></div><button onClick={() => copy(nearestColorName(hex).hex, setCopied)}>{copied ? <Check size={15} /> : <Clipboard size={15} />}</button></div>
     <div className="css-alternative-grid">{colorNames.map((item) => <button key={item.name} onClick={() => setHex(item.hex)}><i style={{ background: item.hex }} /><span>{item.name}</span><code>{item.hex}</code></button>)}</div>
     <label>Reverse: pick a named color<select value={nearestColorName(hex).name} onChange={(event) => setHex(colorNames.find((item) => item.name === event.target.value)?.hex ?? hex)}>{colorNames.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
   </>;
 
   const renderImageColorPicker = () => <>
     <label className="css-upload-zone"><input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) setImageUrl(URL.createObjectURL(file)); }} /><span>Drag & drop an image here, or click to browse</span><small>Supports PNG, JPG, GIF, WebP, SVG, and more</small></label>
-    <div className="css-image-stage">{imageUrl ? <div className="css-uploaded-image" style={{ backgroundImage: `url(${imageUrl})` }} role="img" aria-label="Uploaded color source" /> : <span>No image loaded Ã¢â‚¬â€ upload one above</span>}</div>
+    <div className="css-image-stage">{imageUrl ? <div className="css-uploaded-image" style={{ backgroundImage: `url(${imageUrl})` }} role="img" aria-label="Uploaded color source" /> : <span>No image loaded ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â upload one above</span>}</div>
     <div className="css-alternative-grid">{colors.map((color, index) => <button key={color} onClick={() => setHex(color)}><i style={{ background: color }} /><span>Extracted {index + 1}</span><code>{color}</code></button>)}</div>
   </>;
 
   const renderContrastChecker = () => <>
     <div className="css-field-row"><label>Foreground (Text) Color<input type="color" value={foreground} onChange={(event) => setForeground(event.target.value)} /><input value={foreground} onChange={(event) => setForeground(event.target.value)} /></label><label>Background Color<input type="color" value={hex} onChange={(event) => setHex(event.target.value)} /><input value={hex} onChange={(event) => setHex(event.target.value)} /></label></div>
-    <div className="css-info-card"><span>Contrast Ratio</span><strong>{contrastRatio(foreground, hex)}:1</strong><small>{contrastRatio(foreground, hex) >= 7 ? "Excellent Ãƒâ€šÃ‚Â· AAA ready" : contrastRatio(foreground, hex) >= 4.5 ? "Good Ãƒâ€šÃ‚Â· AA ready" : "Needs more contrast"}</small></div>
+    <div className="css-info-card"><span>Contrast Ratio</span><strong>{contrastRatio(foreground, hex)}:1</strong><small>{contrastRatio(foreground, hex) >= 7 ? "Excellent ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· AAA ready" : contrastRatio(foreground, hex) >= 4.5 ? "Good ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· AA ready" : "Needs more contrast"}</small></div>
     <div className="css-preview-card" style={{ color: foreground, background: hex }}><strong>Sample Heading</strong><p>This paragraph previews accessible body text.</p></div>
   </>;
 
   const renderContrastGrid = () => <>
     <label className="css-contrast-grid">Hex colors<textarea value={gridColors} onChange={(event) => setGridColors(event.target.value)} /><small>{parsedGridColors.length} valid</small></label>
-    <div className="css-contrast-matrix">{parsedGridColors.map((bg) => parsedGridColors.map((fg) => <div key={`${bg}-${fg}`} style={{ color: fg, background: bg }}><b>{contrastRatio(fg, bg)}</b><small>{contrastRatio(fg, bg) >= 4.5 ? "AAÃƒÂ¢Ã…â€œÃ¢â‚¬Å“" : "AAÃƒÆ’Ã¢â‚¬â€"}</small></div>))}</div>
+    <div className="css-contrast-matrix">{parsedGridColors.map((bg) => parsedGridColors.map((fg) => <div key={`${bg}-${fg}`} style={{ color: fg, background: bg }}><b>{contrastRatio(fg, bg)}</b><small>{contrastRatio(fg, bg) >= 4.5 ? "AAÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ" : "AAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â"}</small></div>))}</div>
   </>;
 
   const renderPaletteAi = () => <>
@@ -216,7 +346,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
   const renderColorControls = () => active.includes("Name") ? renderColorNameFinder() : active.includes("Image") ? renderImageColorPicker() : active.includes("Contrast Checker") ? renderContrastChecker() : active.includes("Contrast Grid") ? renderContrastGrid() : active.includes("Palette") ? renderPaletteAi() : active.includes("Scheme") ? renderSchemeGenerator() : renderColorFormat();
 
   const renderGradientStops = () => <>
-    <label className="css-range">Direction <input type="range" min="0" max="360" value={angle} onChange={(event) => setAngle(Number(event.target.value))} /><span>{angle}Ãƒâ€šÃ‚Â°</span></label>
+    <label className="css-range">Direction <input type="range" min="0" max="360" value={angle} onChange={(event) => setAngle(Number(event.target.value))} /><span>{angle}ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°</span></label>
     <div className="css-preset-grid">{palettes.map((palette) => <button key={palette.join()} style={{ background: gradientValue("linear", 135, palette) }} onClick={() => setColors(palette)} />)}</div>
     {colors.map((color, index) => <label className="css-color-stop" key={index}>Stop {index + 1}<input type="color" value={color} onChange={(event) => setColors((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /><input value={color} onChange={(event) => setColors((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /></label>)}
     <button className="css-secondary" onClick={setRandomPalette}><Shuffle size={15} />Random</button>
@@ -260,7 +390,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
 
   const renderEffectFilterSliders = (backdrop = false) => <>
     <div className="css-preset-buttons">{[["None", {}], ["Grayscale", { grayscale: 100 }], ["Vintage", { sepia: 55, contrast: 110, brightness: 95 }], ["Invert", { invert: 100 }], ["High Contrast", { contrast: 180 }], ["Soft Blur", { blur: backdrop ? 12 : 4 }], ["Warm", { sepia: 20, saturate: 125 }], ["Cool", { hueRotate: 35, saturate: 120 }]].map(([label, values]) => <button key={label as string} onClick={() => setEffectFilters((current) => ({ ...current, ...(values as Partial<typeof effectFilters>) }))}>{label as string}</button>)}</div>
-    {(["blur", "brightness", "contrast", "grayscale", "hueRotate", "invert", "opacity", "saturate", "sepia"] as const).map((key) => <label className="css-range" key={key}>{key} <input type="range" min="0" max={key === "blur" ? 32 : key === "hueRotate" ? 360 : key === "brightness" || key === "contrast" || key === "saturate" ? 220 : 100} value={effectFilters[key]} onChange={(event) => setEffectFilters((current) => ({ ...current, [key]: Number(event.target.value) }))} /><span>{effectFilters[key]}{key === "blur" ? "px" : key === "hueRotate" ? "Ã‚Â°" : "%"}</span></label>)}
+    {(["blur", "brightness", "contrast", "grayscale", "hueRotate", "invert", "opacity", "saturate", "sepia"] as const).map((key) => <label className="css-range" key={key}>{key} <input type="range" min="0" max={key === "blur" ? 32 : key === "hueRotate" ? 360 : key === "brightness" || key === "contrast" || key === "saturate" ? 220 : 100} value={effectFilters[key]} onChange={(event) => setEffectFilters((current) => ({ ...current, [key]: Number(event.target.value) }))} /><span>{effectFilters[key]}{key === "blur" ? "px" : key === "hueRotate" ? "Ãƒâ€šÃ‚Â°" : "%"}</span></label>)}
   </>;
   const renderBackdropFilter = () => renderEffectFilterSliders(true);
   const renderFilterGenerator = () => renderEffectFilterSliders(false);
@@ -560,7 +690,39 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
     <div className="css-field-row"><label>Thumb<input type="color" value={shape.scrollbarThumb} onChange={(event) => updateShape("scrollbarThumb", event.target.value)} /></label><label>Track<input type="color" value={shape.scrollbarTrack} onChange={(event) => updateShape("scrollbarTrack", event.target.value)} /></label></div>
   </>;
 
-  const renderShapeControls = () => active.includes("Border Generator") ? renderBorderControls() : active.includes("Outline") ? renderOutlineControls() : active.includes("Clip-path") ? renderClipPathControls() : active.includes("Triangle") ? renderTriangleControls() : active.includes("Object Fit") ? renderObjectFitControls() : active.includes("Scrollbar") ? renderScrollbarControls() : renderRadiusControls();
+  const renderButtonGenerator = () => <>
+    <label>Label<input value={component.label} onChange={(event) => setComponent((current) => ({ ...current, label: event.target.value }))} /></label>
+    <div className="css-segmented"><button className={component.backgroundMode === "solid" ? "is-active" : ""} onClick={() => setComponent((current) => ({ ...current, backgroundMode: "solid" }))}>Solid</button><button className={component.backgroundMode === "gradient" ? "is-active" : ""} onClick={() => setComponent((current) => ({ ...current, backgroundMode: "gradient" }))}>Gradient</button></div>
+    <div className="css-field-row"><label>Color 1<input type="color" value={colors[1]} onChange={(event) => setColors([colors[0], event.target.value, colors[2]])} /></label><label>Color 2<input type="color" value={colors[2]} onChange={(event) => setColors([colors[0], colors[1], event.target.value])} /></label></div>
+    <label className="css-range">Padding X <input type="range" min="8" max="52" value={component.paddingX} onChange={(event) => setComponent((current) => ({ ...current, paddingX: Number(event.target.value) }))} /><span>{component.paddingX}px</span></label>
+    <label className="css-range">Padding Y <input type="range" min="6" max="28" value={component.paddingY} onChange={(event) => setComponent((current) => ({ ...current, paddingY: Number(event.target.value) }))} /><span>{component.paddingY}px</span></label>
+    <label className="css-range">Radius <input type="range" min="0" max="36" value={component.radius} onChange={(event) => setComponent((current) => ({ ...current, radius: Number(event.target.value) }))} /><span>{component.radius}px</span></label>
+    <label className="css-range">Font size <input type="range" min="12" max="32" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} /><span>{fontSize}px</span></label>
+    <label className="css-range">Font weight <input type="range" min="400" max="900" step="100" value={fontWeight} onChange={(event) => setFontWeight(Number(event.target.value))} /><span>{fontWeight}</span></label>
+  </>;
+  const renderNeonButton = () => <>
+    <label>Button Text<input value={component.label} onChange={(event) => setComponent((current) => ({ ...current, label: event.target.value }))} /></label>
+    <label>Neon Color<input type="color" value={component.neonColor} onChange={(event) => setComponent((current) => ({ ...current, neonColor: event.target.value }))} /></label>
+    <label className="css-range">Glow Intensity <input type="range" min="0" max="42" value={component.glow} onChange={(event) => setComponent((current) => ({ ...current, glow: Number(event.target.value) }))} /><span>{component.glow}px</span></label>
+    <label className="css-range">Border Width <input type="range" min="1" max="8" value={component.borderWidth} onChange={(event) => setComponent((current) => ({ ...current, borderWidth: Number(event.target.value) }))} /><span>{component.borderWidth}px</span></label>
+    <label className="css-range">Border Radius <input type="range" min="0" max="28" value={component.radius} onChange={(event) => setComponent((current) => ({ ...current, radius: Number(event.target.value) }))} /><span>{component.radius}px</span></label>
+    <div className="css-preset-buttons">{["#00ffff", "#ff00ff", "#00ff66", "#ff1744", "#6366f1", "#facc15"].map((color) => <button key={color} onClick={() => setComponent((current) => ({ ...current, neonColor: color }))}><i style={{ background: color }} />{color}</button>)}</div>
+    <label className="css-check"><input type="checkbox" checked={component.hover} onChange={(event) => setComponent((current) => ({ ...current, hover: event.target.checked }))} />Hover Effect</label>
+  </>;
+  const renderCardGenerator = () => <>
+    <div className="css-field-row"><label>Background<input type="color" value="#ffffff" readOnly /></label><label>Border<input type="color" value="#e5e7eb" readOnly /></label></div>
+    <label className="css-range">Width <input type="range" min="220" max="520" value={component.cardWidth} onChange={(event) => setComponent((current) => ({ ...current, cardWidth: Number(event.target.value) }))} /><span>{component.cardWidth}px</span></label>
+    <label className="css-range">Radius <input type="range" min="0" max="36" value={component.radius} onChange={(event) => setComponent((current) => ({ ...current, radius: Number(event.target.value) }))} /><span>{component.radius}px</span></label>
+    <label className="css-range">Padding <input type="range" min="12" max="44" value={component.cardPadding} onChange={(event) => setComponent((current) => ({ ...current, cardPadding: Number(event.target.value) }))} /><span>{component.cardPadding}px</span></label>
+    <div className="css-segmented">{["none", "sm", "md", "lg"].map((elevation) => <button key={elevation} className={component.cardElevation === elevation ? "is-active" : ""} onClick={() => setComponent((current) => ({ ...current, cardElevation: elevation }))}>{elevation.toUpperCase()}</button>)}</div>
+    <label className="css-check"><input type="checkbox" checked={component.cardHeader} onChange={(event) => setComponent((current) => ({ ...current, cardHeader: event.target.checked }))} />Gradient header</label>
+  </>;
+  const renderTooltipGenerator = () => <><label>Tooltip text<input value={component.tooltipText} onChange={(event) => setComponent((current) => ({ ...current, tooltipText: event.target.value }))} /></label><div className="css-segmented">{["top", "right", "bottom", "left"].map((position) => <button key={position} className={component.tooltipPosition === position ? "is-active" : ""} onClick={() => setComponent((current) => ({ ...current, tooltipPosition: position }))}>{position}</button>)}</div><label className="css-range">Radius <input type="range" min="0" max="20" value={component.radius} onChange={(event) => setComponent((current) => ({ ...current, radius: Number(event.target.value) }))} /><span>{component.radius}px</span></label></>;
+  const renderToggleSwitch = () => <><label className="css-range">Width <input type="range" min="36" max="92" value={component.toggleWidth} onChange={(event) => setComponent((current) => ({ ...current, toggleWidth: Number(event.target.value) }))} /><span>{component.toggleWidth}px</span></label><label className="css-range">Height <input type="range" min="18" max="52" value={component.toggleHeight} onChange={(event) => setComponent((current) => ({ ...current, toggleHeight: Number(event.target.value) }))} /><span>{component.toggleHeight}px</span></label><label className="css-range">Animation <input type="range" min="80" max="700" value={animation.duration} onChange={(event) => setAnimation((current) => ({ ...current, duration: Number(event.target.value) }))} /><span>{animation.duration}ms</span></label><div className="css-field-row"><label>Track on<input type="color" value={colors[1]} onChange={(event) => setColors([colors[0], event.target.value, colors[2]])} /></label><label>Thumb<input type="color" value={foreground} onChange={(event) => setForeground(event.target.value)} /></label></div></>;
+  const renderCursorGenerator = () => <><div className="css-field-row"><label>Search cursors<input value={component.cursorSearch} onChange={(event) => setComponent((current) => ({ ...current, cursorSearch: event.target.value }))} /></label><label>Category<select value={component.cursorCategory} onChange={(event) => setComponent((current) => ({ ...current, cursorCategory: event.target.value }))}><option>All Categories</option>{cursorCategories.map((group) => <option key={group.label}>{group.label}</option>)}</select></label></div><div className="css-cursor-grid">{cursorCategories.filter((group) => component.cursorCategory === "All Categories" || group.label === component.cursorCategory).flatMap((group) => group.values).filter((value) => value.includes(component.cursorSearch.toLowerCase())).map((cursor) => <button key={cursor} style={{ cursor }} className={component.cursor === cursor ? "is-active" : ""} onClick={() => setComponent((current) => ({ ...current, cursor }))}>{cursor}</button>)}</div></>;
+  const renderPointerEvents = () => <><label>Pointer Events<select value={component.pointerEvent} onChange={(event) => setComponent((current) => ({ ...current, pointerEvent: event.target.value }))}>{pointerEvents.map((value) => <option key={value}>{value}</option>)}</select></label><p className="css-help-text">Preview keeps one normal box and one applied box so the difference is visible.</p></>;
+  const renderAccentColor = () => <><label>Accent Color<input type="color" value={component.accentColor} onChange={(event) => setComponent((current) => ({ ...current, accentColor: event.target.value }))} /></label><div className="css-preset-buttons">{["#3b82f6", "#ef4444", "#22c55e", "#a855f7", "#f97316", "#ec4899", "#14b8a6", "#eab308"].map((color) => <button key={color} onClick={() => setComponent((current) => ({ ...current, accentColor: color }))}><i style={{ background: color }} />{color}</button>)}</div></>;
+  const renderComponentControls = () => active.includes("Neon") ? renderNeonButton() : active.includes("Card") ? renderCardGenerator() : active.includes("Tooltip") ? renderTooltipGenerator() : active.includes("Toggle") ? renderToggleSwitch() : active.includes("Cursor") ? renderCursorGenerator() : active.includes("Pointer") ? renderPointerEvents() : active.includes("Accent") ? renderAccentColor() : renderButtonGenerator();  const renderShapeControls = () => active.includes("Border Generator") ? renderBorderControls() : active.includes("Outline") ? renderOutlineControls() : active.includes("Clip-path") ? renderClipPathControls() : active.includes("Triangle") ? renderTriangleControls() : active.includes("Object Fit") ? renderObjectFitControls() : active.includes("Scrollbar") ? renderScrollbarControls() : renderRadiusControls();
   const renderAnimationControls = () => active.includes("Keyframe") ? renderKeyframeAnimator() : active.includes("Transition") ? renderTransitionGenerator() : active === "CSS Transform Generator" ? renderTransformGenerator() : active.includes("3D Transform") ? renderThreeDTransform() : active.includes("Perspective") ? renderPerspectiveGenerator() : active.includes("Bezier") ? renderBezierEditor() : active.includes("Easing") ? renderEasingEditor() : active.includes("Scroll Snap") ? renderScrollSnapGenerator() : active.includes("Scroll Timeline") ? renderScrollTimelineGenerator() : active.includes("Typing") ? renderTypingEffectGenerator() : active.includes("Loader") ? renderLoaderGenerator() : renderAnimationGenerator();
   const renderShadowPreview = () => {
     const shadowValue = shadowCss(shadow).replace("box-shadow: ", "").replace(";", "");
@@ -624,7 +786,16 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
     if (active.includes("Keyframe")) return <div className="css-animation-stage"><div className="css-keyframe-demo" style={{ animation: `custom-motion ${animation.duration}ms ${animation.timing} ${animation.delay}ms ${animation.iteration} ${animation.direction} ${animation.fillMode}` }}>Keyframes</div></div>;
     return <div className="css-animation-stage"><div className="css-animated-box" style={{ animation: `${animation.name} ${animation.duration}ms ${animation.timing} ${animation.delay}ms ${animation.iteration} ${animation.direction} ${animation.fillMode}` }}>{text || "Element"}</div></div>;
   };
-  const renderShapePreview = () => {
+  const renderComponentPreview = () => {
+    if (active.includes("Neon")) return <div className="css-component-stage"><button className="css-neon-button-preview" style={{ color: component.neonColor, borderColor: component.neonColor, borderWidth: component.borderWidth, borderRadius: component.radius, boxShadow: `0 0 ${component.glow}px ${component.neonColor}`, textShadow: `0 0 6px ${component.neonColor}` }}>{component.label}</button></div>;
+    if (active.includes("Card")) return <div className="css-component-stage"><article className="css-component-card-preview" style={{ width: component.cardWidth, borderRadius: component.radius + 6, boxShadow: cardShadow }}>{component.cardHeader && <div style={{ background: gradientValue("linear", angle, colors.slice(1, 3)) }} />}<section style={{ padding: component.cardPadding }}><strong>Card title</strong><p>A short supporting line of body text to preview spacing and contrast.</p></section></article></div>;
+    if (active.includes("Tooltip")) return <div className="css-component-stage css-tooltip-stage"><button data-tooltip={component.tooltipText}>Hover me<span>{component.tooltipText}</span></button></div>;
+    if (active.includes("Toggle")) return <div className="css-component-stage css-toggle-stage"><button className={component.toggleOn ? "is-on" : ""} style={{ width: component.toggleWidth, height: component.toggleHeight, borderRadius: component.toggleHeight, background: component.toggleOn ? colors[1] : "#cbd5e1" }} onClick={() => setComponent((current) => ({ ...current, toggleOn: !current.toggleOn }))}><span style={{ width: component.toggleHeight - 6, height: component.toggleHeight - 6, transform: component.toggleOn ? `translateX(${component.toggleWidth - component.toggleHeight}px)` : "translateX(0)" }} /></button><small>{component.toggleOn ? "on" : "off"}</small></div>;
+    if (active.includes("Cursor")) return <div className="css-component-stage"><div className="css-cursor-preview" style={{ cursor: component.cursor }}>Hover here: <strong>{component.cursor}</strong></div></div>;
+    if (active.includes("Pointer")) return <div className="css-component-stage css-pointer-stage"><button>Normal</button><button style={{ pointerEvents: component.pointerEvent as CSSProperties["pointerEvents"] }}>Applied<br /><small>{component.pointerEvent}</small></button></div>;
+    if (active.includes("Accent")) return <div className="css-component-stage css-accent-preview" style={{ accentColor: component.accentColor }}><label><input type="checkbox" defaultChecked /> Checkbox</label><label><input type="radio" name="accent-preview" defaultChecked /> Radio</label><input type="range" defaultValue="55" /><progress value="65" max="100" /></div>;
+    return <div className="css-component-stage css-component-button-preview"><button style={{ padding: `${component.paddingY}px ${component.paddingX}px`, borderRadius: component.radius, background: buttonBackground, color: foreground, fontSize, fontWeight, boxShadow: componentShadow }}>{component.label}</button></div>;
+  };  const renderShapePreview = () => {
     if (active.includes("Object Fit")) return <div className="css-object-fit-stage"><img alt="Object fit preview" style={{ objectFit: shape.objectFit as CSSProperties["objectFit"], objectPosition: shape.objectPosition }} src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80" /><span>object-fit: {shape.objectFit}</span></div>;
     if (active.includes("Scrollbar")) {
       const scrollbarPreviewStyle = {
@@ -668,7 +839,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
     <div className="css-tool-intro"><div><h2>{activeTitle}</h2></div></div>
     <div className="css-tool-grid" style={collectionId === "shapes-borders" ? { overflow: "visible" } : undefined}>
       <div className="css-control-panel">
-        {collectionId === "color-tools" ? renderColorControls() : collectionId === "gradients-patterns" ? renderGradientControls() : collectionId === "shadows-effects" ? renderShadowControls() : collectionId === "layout-tools" ? renderLayoutControls() : collectionId === "typography" ? renderTypographyControls() : collectionId === "shapes-borders" ? renderShapeControls() : renderAnimationControls()}
+        {collectionId === "color-tools" ? renderColorControls() : collectionId === "gradients-patterns" ? renderGradientControls() : collectionId === "shadows-effects" ? renderShadowControls() : collectionId === "layout-tools" ? renderLayoutControls() : collectionId === "typography" ? renderTypographyControls() : collectionId === "component-generators" ? renderComponentControls() : collectionId === "shapes-borders" ? renderShapeControls() : renderAnimationControls()}
       </div>
       <div className="css-preview-column">
         <div className="css-tool-preview" style={previewStyle}>
@@ -676,10 +847,12 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
           {collectionId === "layout-tools" && renderLayoutPreview()}
           {collectionId === "animations" && renderAnimationPreview()}
           {collectionId === "shapes-borders" && renderShapePreview()}
+          {collectionId === "component-generators" && renderComponentPreview()}
           {collectionId === "typography" && <div className={active.includes("Type Scale") ? "css-type-scale-preview" : active.includes("Font-Face") ? "css-font-face-preview" : active.includes("Writing Mode") ? "css-writing-preview" : "css-typography-preview"} style={typographyPreviewStyle}><strong>{active.includes("Type Scale") ? "--text-4xl" : text}</strong><small>{active.includes("Font-Face") ? "@font-face preview" : active.includes("Writing Mode") ? "Writing mode preview" : "Typography preview"}</small></div>}
           {(collectionId === "color-tools" || collectionId === "gradients-patterns") && <div className="css-preview-card"><strong>{activeTitle}</strong><span>Preview</span></div>}
         </div>
         <div className="css-code-output"><div><strong>CSS Output</strong><button onClick={() => copy(css, setCopied)}>{copied ? <Check size={15} /> : <Clipboard size={15} />}{copied ? "Copied" : "Copy Code"}</button></div><pre>{css}</pre></div>
+        {collectionId === "component-generators" && !active.includes("Cursor") && !active.includes("Pointer") && !active.includes("Accent") && <div className="css-code-output"><div><strong>HTML Output</strong><button onClick={() => copy(componentHtml, setCopied)}>{copied ? <Check size={15} /> : <Clipboard size={15} />}{copied ? "Copied" : "Copy HTML"}</button></div><pre>{componentHtml}</pre></div>}
         {collectionId === "color-tools" && <div className="css-format-grid">{Object.entries(colorData).filter(([key]) => key !== "cssVariables").map(([key, value]) => <code key={key}><span>{key.toUpperCase()}</span>{value}</code>)}</div>}
       </div>
     </div>

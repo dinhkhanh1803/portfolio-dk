@@ -209,3 +209,72 @@ test("Shapes and borders stylesheet keeps object fit and scrollbar previews boun
   assert.match(css, /css-tool-workbench--shapes-borders \.css-tool-tabs\{display:grid!important;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);flex:0 0 auto!important/);
   assert.match(css, /@media\(max-width:900px\)\{\.tools-main\.is-detail \.css-tool-workbench--shapes-borders \.css-tool-tabs\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+
+test("CSS component generators implement all eight dedicated workflows", () => {
+  const workbench = readFileSync(resolve("app/tools/css-tools-workbench.tsx"), "utf8");
+  const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
+  for (const label of ["CSS Button Generator", "CSS Neon Button Generator", "CSS Card Generator", "CSS Tooltip Generator", "CSS Toggle Switch", "CSS Cursor Generator", "CSS Pointer Events Generator", "CSS Accent Color Generator"]) {
+    assert.match(workbench, new RegExp(label));
+    assert.match(page, new RegExp(label));
+  }
+  for (const token of ["renderButtonGenerator", "renderNeonButton", "renderCardGenerator", "renderTooltipGenerator", "renderToggleSwitch", "renderCursorGenerator", "renderPointerEvents", "renderAccentColor", "renderComponentPreview"]) assert.match(workbench, new RegExp(token));
+  assert.match(page, /activeCollection\.id === "component-generators"/);
+});
+test("CSS component generator previews stay responsive and bounded", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /CSS component generator previews/);
+  for (const klass of ["css-component-button-preview", "css-neon-button-preview", "css-component-card-preview", "css-tooltip-stage", "css-toggle-stage", "css-cursor-grid", "css-pointer-stage", "css-accent-preview"]) assert.match(css, new RegExp(klass));
+  assert.match(css, /\.css-cursor-grid\{[^}]*grid-template-columns:repeat\(auto-fit,minmax\(150px,1fr\)\)/);
+  assert.match(css, /\.css-component-stage\{[^}]*overflow:hidden/);
+});
+test("CSS Utilities implements five dedicated interactive tools", () => {
+  const utilities = readFileSync(resolve("app/tools/css-utilities-workbench.tsx"), "utf8");
+  const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
+  for (const label of ["CSS Variable Generator", "CSS @supports Generator", "CSS Specificity Calculator", "CSS Box Model Visualizer", "Tailwind Config Generator"]) { assert.ok(utilities.includes(label)); assert.ok(page.includes(label)); }
+  for (const token of ["renderVariableGenerator", "renderSupportsGenerator", "renderSpecificityCalculator", "renderBoxModelVisualizer", "renderTailwindConfigGenerator", "renderUtilitiesPreview", "specificityRows", "tailwindConfigOutput"]) assert.ok(utilities.includes(token));
+  assert.match(page, /activeCollection\.id === "css-utilities"/);
+});
+test("CSS Utilities stylesheet keeps dense editors responsive and bounded", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /CSS utilities dedicated previews/);
+  for (const klass of ["css-variables-preview", "css-specificity-list", "css-box-model-stage", "css-tailwind-preview", "css-supports-preview"]) assert.ok(css.includes(klass));
+  assert.match(css, /\.css-box-model-stage\{[^}]*overflow:auto/);
+  assert.match(css, /\.css-specificity-list\{[^}]*overflow:auto/);
+  assert.match(css, /css-tool-workbench--css-utilities/);
+});
+test("CSS Box Model preview separates its legend from thin nested layers", () => {
+  const utilities = readFileSync(resolve("app/tools/css-utilities-workbench.tsx"), "utf8");
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(utilities, /className="css-box-model-legend"/);
+  assert.match(utilities, /className="css-box-diagram"/);
+  for (const layer of ["margin", "border", "padding", "content"]) assert.ok(utilities.includes('className="is-' + layer + '"'));
+  assert.match(css, /\.css-box-model-legend\{[^}]*display:flex;[^}]*flex-wrap:wrap/);
+  assert.match(css, /\.css-box-diagram\{[^}]*min-width:max-content/);
+  assert.doesNotMatch(css, /\.css-box-model-stage span\{position:absolute/);
+});
+test("Tailwind config generator exposes expanded design tokens", () => {
+  const utilities = readFileSync(resolve("app/tools/css-utilities-workbench.tsx"), "utf8");
+  for (const group of ["fontSize", "spacing", "borderRadius", "boxShadow", "breakpoints"]) assert.ok(utilities.includes(group));
+  for (const color of ["primary", "secondary", "accent", "neutral", "success", "warning", "danger", "info"]) assert.ok(utilities.includes(color));
+  for (const breakpoint of ["sm", "md", "lg", "xl", "2xl"]) assert.ok(utilities.includes(breakpoint));
+  assert.match(utilities, /className="css-tailwind-token-grid"/);
+  assert.match(utilities, /is-tailwind-config/);
+});
+test("Tailwind generated config fills the available right column", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  assert.match(css, /\.css-tool-grid\.is-tailwind-config\{[^}]*align-items:stretch/);
+  assert.match(css, /\.is-tailwind-config \.css-preview-column\{[^}]*grid-template-rows:auto minmax\(0,1fr\)/);
+  assert.match(css, /\.is-tailwind-config \.css-code-output\{[^}]*grid-template-rows:auto minmax\(0,1fr\)/);
+  assert.match(css, /\.is-tailwind-config \.css-code-output pre\{[^}]*max-height:none;[^}]*height:100%/);
+  assert.match(css, /\.css-tailwind-token-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});test("desktop tool detail scrollbar stays inside the rounded panel", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
+  assert.match(page, /className="tools-detail-scroll"/);
+  assert.match(css, /Detail workbench scrollbar stays inset inside the rounded panel/);
+  assert.match(css, /@media\(min-width:761px\)\{\.is-tool-detail \.tools-main\.is-detail\{overflow:hidden\}\.is-tool-detail \.tools-main\{grid-template-rows:minmax\(0,1fr\)\}\.tools-detail-scroll\{[^}]*overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable/);
+  assert.match(css, /\.tools-detail-scroll::-webkit-scrollbar\{width:10px\}/);
+  assert.match(css, /\.tools-detail-scroll::-webkit-scrollbar-thumb\{[^}]*border-radius:999px/);
+  assert.doesNotMatch(css, /Detail workbenches share one vertical scrolling contract/);
+});
