@@ -9,4 +9,7 @@ test("Formatters workbench carries its own stylesheet chunk", async () => {
   assert.match(source, /import\s+"\.\/formatters-workbench\.module\.css"/);
   assert.match(styles, /:global\(\.fmt-workbench\)/);
   assert.match(styles, /:global\(\.fmt-grid\)/);
+  assert.match(styles, /:global\(\.fmt-workbench\)\s*\{\s*[^}]*padding:\s*0 28px 18px;/);
+  assert.match(styles, /:global\(\.fmt-tabs\)\s*\{\s*[^}]*border:\s*0;/);
+  assert.match(styles, /:global\(\.fmt-toolbar\)\s*\{\s*[^}]*padding:\s*9px 12px;/);
 });
