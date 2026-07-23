@@ -28,6 +28,7 @@ import MarkdownDocsWorkbench from "./markdown-docs-workbench";
 import DeveloperUtilitiesWorkbench from "./developer-utilities-workbench";
 import JsonToolsWorkbench from "./json-tools-workbench";
 import FormattersWorkbench from "./formatters-workbench";
+import TextManipulationWorkbench from "./text-manipulation-workbench";
 
 type ToolCollection = {
   id: string;
@@ -75,7 +76,7 @@ const groups: ToolGroup[] = [
     { id: "code-formatters", label: "Code Formatters", icon: FileCode2, tools: ["Code Prettier", "SQL Formatter", "XML Formatter", "YAML Formatter", "TOML Formatter", ".env Formatter", "HTML Compressor / Minifier", "Column Formatter"] },
   ]},
   { id: "text", label: "Text Tools", collections: [
-    { id: "text-manipulation", label: "Text Manipulation", icon: TextCursorInput, tools: ["Case Converter", "Line Sorter", "Duplicate Remover", "Text Reverser"] },
+    { id: "text-manipulation", label: "Text Manipulation", icon: TextCursorInput, tools: ["Text Manipulation", "Case Converter Pro", "Batch Find & Replace", "Remove Duplicate Lines", "List Utilities", "ASCII Art Generator"] },
     { id: "text-analysis", label: "Text Analysis", icon: ListFilter, tools: ["Word Counter", "Reading Time", "Character Frequency"] },
     { id: "regex-tools", label: "Regex Tools", icon: Regex, tools: ["Regex Tester", "Regex Explainer", "Pattern Library"] },
     { id: "text-utilities", label: "Text Utilities", icon: Sparkles, tools: ["Slug Generator", "Diff Checker", "Whitespace Cleaner"] },
@@ -100,8 +101,8 @@ const allCollections = groups.flatMap((group) => group.collections.map((collecti
 const normalize = (value: string) => value.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
 const interfaceCopy = {
-  vi: { badge: "DK Coder · Toolbox", title: "Công cụ nhỏ, giải quyết việc lớn.", lead: "Bộ tiện ích dành cho lập trình, thiết kế và xử lý nội dung — nhanh, riêng tư và ngay trong trình duyệt.", filter: "Lọc công cụ...", quick: "Tìm nhanh bất kỳ công cụ nào...", recent: "Dùng gần đây", results: "Kết quả tìm kiếm", collections: "bộ công cụ", input: "Dữ liệu vào", output: "Kết quả", run: "Chạy công cụ", clear: "Xóa" },
-  en: { badge: "DK Coder · Toolbox", title: "Small tools, meaningful momentum.", lead: "A focused collection for development, design and content work — fast, private and browser-first.", filter: "Filter tools...", quick: "Quick search for any tool...", recent: "Recently used", results: "Search results", collections: "collections", input: "Input", output: "Output", run: "Run tool", clear: "Clear" },
+  vi: { badge: "DK Coder Â· Toolbox", title: "CÃ´ng cá»¥ nhá», giáº£i quyáº¿t viá»‡c lá»›n.", lead: "Bá»™ tiá»‡n Ã­ch dÃ nh cho láº­p trÃ¬nh, thiáº¿t káº¿ vÃ  xá»­ lÃ½ ná»™i dung â€” nhanh, riÃªng tÆ° vÃ  ngay trong trÃ¬nh duyá»‡t.", filter: "Lá»c cÃ´ng cá»¥...", quick: "TÃ¬m nhanh báº¥t ká»³ cÃ´ng cá»¥ nÃ o...", recent: "DÃ¹ng gáº§n Ä‘Ã¢y", results: "Káº¿t quáº£ tÃ¬m kiáº¿m", collections: "bá»™ cÃ´ng cá»¥", input: "Dá»¯ liá»‡u vÃ o", output: "Káº¿t quáº£", run: "Cháº¡y cÃ´ng cá»¥", clear: "XÃ³a" },
+  en: { badge: "DK Coder Â· Toolbox", title: "Small tools, meaningful momentum.", lead: "A focused collection for development, design and content work â€” fast, private and browser-first.", filter: "Filter tools...", quick: "Quick search for any tool...", recent: "Recently used", results: "Search results", collections: "collections", input: "Input", output: "Output", run: "Run tool", clear: "Clear" },
 } as const;
 
 export function ToolsHub({ collectionId }: { collectionId?: string }) {
@@ -191,7 +192,7 @@ const searchResults = useMemo(() => {
       else if (currentTool.includes("JSON Minifier")) setOutput(JSON.stringify(JSON.parse(input)));
       else if (currentTool === "Slug Generator") setOutput(normalize(input).trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
       else if (currentTool === "Case Converter") setOutput(input.split(/\s+/).filter(Boolean).map((word, index) => index ? word[0]?.toUpperCase() + word.slice(1).toLowerCase() : word.toLowerCase()).join(""));
-      else if (currentTool === "Word Counter") setOutput(`${input.trim() ? input.trim().split(/\s+/).length : 0} words · ${input.length} characters`);
+      else if (currentTool === "Word Counter") setOutput(`${input.trim() ? input.trim().split(/\s+/).length : 0} words Â· ${input.length} characters`);
       else if (currentTool === "Text Reverser") setOutput([...input].reverse().join(""));
       else if (currentTool === "Whitespace Cleaner") setOutput(input.replace(/\s+/g, " ").trim());
       else setOutput(input || `${currentTool} is ready for input.`);
@@ -229,18 +230,18 @@ const searchResults = useMemo(() => {
             <span><Sparkles size={15} /> {t.badge}</span>
             <h1>{t.title}</h1>
             <p>{t.lead}</p>
-            <label className="tools-quick-search"><Search size={25} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.quick} /><kbd>⌘ K</kbd></label>
+            <label className="tools-quick-search"><Search size={25} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.quick} /><kbd>âŒ˜ K</kbd></label>
             <div className="tools-proof"><span>100+ utilities</span><i /><span>Instant search</span><i /><span>Private by design</span></div>
           </header>
           {query ? <section className="tools-search-results">
             <div className="tools-section-heading"><h2>{t.results}</h2><span>{searchResults.length} {t.collections}</span></div>
-            <div className="tool-collection-grid">{searchResults.map((collection) => <button key={collection.id} onClick={() => openCollection(collection)}><collection.icon size={19} /><strong>{collection.label}</strong><span>{collection.tools.slice(0, 3).join(" · ")}</span></button>)}</div>
+            <div className="tool-collection-grid">{searchResults.map((collection) => <button key={collection.id} onClick={() => openCollection(collection)}><collection.icon size={19} /><strong>{collection.label}</strong><span>{collection.tools.slice(0, 3).join(" Â· ")}</span></button>)}</div>
           </section> : <section className="tools-recent"><h2>{t.recent}</h2><div>{recent.map((name) => <button key={name} onClick={() => openRecentTool(name)}><Link2 size={15} />{name}</button>)}</div></section>}
         </>}
 
         {collectionId && <div className="tools-detail-scroll">
           <div className="tools-breadcrumb"><button onClick={() => { rememberSidebarScroll(); router.push("/tools"); }}>Tools</button><span>/</span><span>{activeCollection.group}</span><span>/</span><strong>{currentTool}</strong></div>
-          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : activeCollection.id === "color-tools" ? <CssToolsWorkbench key="color-tools" collectionId="color-tools" /> : activeCollection.id === "gradients-patterns" ? <CssToolsWorkbench key="gradients-patterns" collectionId="gradients-patterns" /> : activeCollection.id === "shadows-effects" ? <CssToolsWorkbench key="shadows-effects" collectionId="shadows-effects" /> : activeCollection.id === "layout-tools" ? <CssToolsWorkbench key="layout-tools" collectionId="layout-tools" /> : activeCollection.id === "animations" ? <CssToolsWorkbench key="animations" collectionId="animations" /> : activeCollection.id === "typography" ? <CssToolsWorkbench key="typography" collectionId="typography" /> : activeCollection.id === "shapes-borders" ? <CssToolsWorkbench key="shapes-borders" collectionId="shapes-borders" /> : activeCollection.id === "component-generators" ? <CssToolsWorkbench key="component-generators" collectionId="component-generators" /> : activeCollection.id === "css-utilities" ? <CssUtilitiesWorkbench /> : activeCollection.id === "id-random" ? <IdRandomWorkbench /> : activeCollection.id === "mock-data" ? <ContentMockWorkbench /> : activeCollection.id === "favicon-placeholder" ? <FaviconPlaceholderWorkbench /> : activeCollection.id === "config-files" ? <ConfigFileWorkbench /> : activeCollection.id === "cron-schedule" ? <CronScheduleWorkbench /> : activeCollection.id === "markdown-docs" ? <MarkdownDocsWorkbench /> : activeCollection.id === "developer-utilities" ? <DeveloperUtilitiesWorkbench /> : activeCollection.id === "json-tools" ? <JsonToolsWorkbench /> : activeCollection.id === "code-formatters" ? <FormattersWorkbench /> : <section className="tool-workspace">
+          {activeCollection.id === "encoding-tools" ? <EncodingWorkbench /> : activeCollection.id === "data-format" ? <DataFormatWorkbench /> : activeCollection.id === "crypto-hash" ? <CryptoWorkbench /> : activeCollection.id === "code-converters" ? <CodeConverterWorkbench /> : activeCollection.id === "number-converters" ? <NumberToolsWorkbench /> : activeCollection.id === "unit-converters" ? <UnitToolsWorkbench /> : activeCollection.id === "date-time" ? <DateTimeWorkbench /> : activeCollection.id === "color-tools" ? <CssToolsWorkbench key="color-tools" collectionId="color-tools" /> : activeCollection.id === "gradients-patterns" ? <CssToolsWorkbench key="gradients-patterns" collectionId="gradients-patterns" /> : activeCollection.id === "shadows-effects" ? <CssToolsWorkbench key="shadows-effects" collectionId="shadows-effects" /> : activeCollection.id === "layout-tools" ? <CssToolsWorkbench key="layout-tools" collectionId="layout-tools" /> : activeCollection.id === "animations" ? <CssToolsWorkbench key="animations" collectionId="animations" /> : activeCollection.id === "typography" ? <CssToolsWorkbench key="typography" collectionId="typography" /> : activeCollection.id === "shapes-borders" ? <CssToolsWorkbench key="shapes-borders" collectionId="shapes-borders" /> : activeCollection.id === "component-generators" ? <CssToolsWorkbench key="component-generators" collectionId="component-generators" /> : activeCollection.id === "css-utilities" ? <CssUtilitiesWorkbench /> : activeCollection.id === "id-random" ? <IdRandomWorkbench /> : activeCollection.id === "mock-data" ? <ContentMockWorkbench /> : activeCollection.id === "favicon-placeholder" ? <FaviconPlaceholderWorkbench /> : activeCollection.id === "config-files" ? <ConfigFileWorkbench /> : activeCollection.id === "cron-schedule" ? <CronScheduleWorkbench /> : activeCollection.id === "markdown-docs" ? <MarkdownDocsWorkbench /> : activeCollection.id === "developer-utilities" ? <DeveloperUtilitiesWorkbench /> : activeCollection.id === "json-tools" ? <JsonToolsWorkbench /> : activeCollection.id === "code-formatters" ? <FormattersWorkbench /> : activeCollection.id === "text-manipulation" ? <TextManipulationWorkbench /> : <section className="tool-workspace">
             <div className="tool-tabs">{activeCollection.tools.map((name) => <button className={currentTool === name ? "is-active" : ""} onClick={() => selectTool(name)} key={name}>{name}</button>)}</div>
             <div className="tool-runner">
               <label><span>{t.input}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={`Paste or type content for ${currentTool}...`} /></label>
