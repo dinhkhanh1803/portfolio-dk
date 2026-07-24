@@ -309,26 +309,26 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
 
   const renderColorNameFinder = () => <>
     <div className="css-field-row"><label>Enter a color (hex, rgb, or name)<input value={hex} onChange={(event) => setHex(event.target.value)} /></label><label>Preview<input type="color" value={hex} onChange={(event) => setHex(event.target.value)} /></label></div>
-    <div className="css-name-result"><i style={{ background: nearestColorName(hex).hex }} /><div><strong>{nearestColorName(hex).name}</strong><span>{nearestColorName(hex).hex} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· distance {Math.round(nearestColorName(hex).distance)}</span></div><button onClick={() => copy(nearestColorName(hex).hex, setCopied)}>{copied ? <Check size={15} /> : <Clipboard size={15} />}</button></div>
+    <div className="css-name-result"><i style={{ background: nearestColorName(hex).hex }} /><div><strong>{nearestColorName(hex).name}</strong><span>{nearestColorName(hex).hex} · distance {Math.round(nearestColorName(hex).distance)}</span></div><button onClick={() => copy(nearestColorName(hex).hex, setCopied)}>{copied ? <Check size={15} /> : <Clipboard size={15} />}</button></div>
     <div className="css-alternative-grid">{colorNames.map((item) => <button key={item.name} onClick={() => setHex(item.hex)}><i style={{ background: item.hex }} /><span>{item.name}</span><code>{item.hex}</code></button>)}</div>
     <label>Reverse: pick a named color<select value={nearestColorName(hex).name} onChange={(event) => setHex(colorNames.find((item) => item.name === event.target.value)?.hex ?? hex)}>{colorNames.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
   </>;
 
   const renderImageColorPicker = () => <>
     <label className="css-upload-zone"><input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) setImageUrl(URL.createObjectURL(file)); }} /><span>Drag & drop an image here, or click to browse</span><small>Supports PNG, JPG, GIF, WebP, SVG, and more</small></label>
-    <div className="css-image-stage">{imageUrl ? <div className="css-uploaded-image" style={{ backgroundImage: `url(${imageUrl})` }} role="img" aria-label="Uploaded color source" /> : <span>No image loaded ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â upload one above</span>}</div>
+    <div className="css-image-stage">{imageUrl ? <div className="css-uploaded-image" style={{ backgroundImage: `url(${imageUrl})` }} role="img" aria-label="Uploaded color source" /> : <span>No image loaded — upload one above</span>}</div>
     <div className="css-alternative-grid">{colors.map((color, index) => <button key={color} onClick={() => setHex(color)}><i style={{ background: color }} /><span>Extracted {index + 1}</span><code>{color}</code></button>)}</div>
   </>;
 
   const renderContrastChecker = () => <>
     <div className="css-field-row"><label>Foreground (Text) Color<input type="color" value={foreground} onChange={(event) => setForeground(event.target.value)} /><input value={foreground} onChange={(event) => setForeground(event.target.value)} /></label><label>Background Color<input type="color" value={hex} onChange={(event) => setHex(event.target.value)} /><input value={hex} onChange={(event) => setHex(event.target.value)} /></label></div>
-    <div className="css-info-card"><span>Contrast Ratio</span><strong>{contrastRatio(foreground, hex)}:1</strong><small>{contrastRatio(foreground, hex) >= 7 ? "Excellent ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· AAA ready" : contrastRatio(foreground, hex) >= 4.5 ? "Good ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· AA ready" : "Needs more contrast"}</small></div>
+    <div className="css-info-card"><span>Contrast Ratio</span><strong>{contrastRatio(foreground, hex)}:1</strong><small>{contrastRatio(foreground, hex) >= 7 ? "Excellent · AAA ready" : contrastRatio(foreground, hex) >= 4.5 ? "Good · AA ready" : "Needs more contrast"}</small></div>
     <div className="css-preview-card" style={{ color: foreground, background: hex }}><strong>Sample Heading</strong><p>This paragraph previews accessible body text.</p></div>
   </>;
 
   const renderContrastGrid = () => <>
     <label className="css-contrast-grid">Hex colors<textarea value={gridColors} onChange={(event) => setGridColors(event.target.value)} /><small>{parsedGridColors.length} valid</small></label>
-    <div className="css-contrast-matrix">{parsedGridColors.map((bg) => parsedGridColors.map((fg) => <div key={`${bg}-${fg}`} style={{ color: fg, background: bg }}><b>{contrastRatio(fg, bg)}</b><small>{contrastRatio(fg, bg) >= 4.5 ? "AAÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ" : "AAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â"}</small></div>))}</div>
+    <div className="css-contrast-matrix">{parsedGridColors.map((bg) => parsedGridColors.map((fg) => <div key={`${bg}-${fg}`} style={{ color: fg, background: bg }}><b>{contrastRatio(fg, bg)}</b><small>{contrastRatio(fg, bg) >= 4.5 ? "AA✓" : "AA×"}</small></div>))}</div>
   </>;
 
   const renderPaletteAi = () => <>
@@ -346,7 +346,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
   const renderColorControls = () => active.includes("Name") ? renderColorNameFinder() : active.includes("Image") ? renderImageColorPicker() : active.includes("Contrast Checker") ? renderContrastChecker() : active.includes("Contrast Grid") ? renderContrastGrid() : active.includes("Palette") ? renderPaletteAi() : active.includes("Scheme") ? renderSchemeGenerator() : renderColorFormat();
 
   const renderGradientStops = () => <>
-    <label className="css-range">Direction <input type="range" min="0" max="360" value={angle} onChange={(event) => setAngle(Number(event.target.value))} /><span>{angle}ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°</span></label>
+    <label className="css-range">Direction <input type="range" min="0" max="360" value={angle} onChange={(event) => setAngle(Number(event.target.value))} /><span>{angle}°</span></label>
     <div className="css-preset-grid">{palettes.map((palette) => <button key={palette.join()} style={{ background: gradientValue("linear", 135, palette) }} onClick={() => setColors(palette)} />)}</div>
     {colors.map((color, index) => <label className="css-color-stop" key={index}>Stop {index + 1}<input type="color" value={color} onChange={(event) => setColors((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /><input value={color} onChange={(event) => setColors((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /></label>)}
     <button className="css-secondary" onClick={setRandomPalette}><Shuffle size={15} />Random</button>
@@ -390,7 +390,7 @@ export default function CssToolsWorkbench({ collectionId }: Props) {
 
   const renderEffectFilterSliders = (backdrop = false) => <>
     <div className="css-preset-buttons">{[["None", {}], ["Grayscale", { grayscale: 100 }], ["Vintage", { sepia: 55, contrast: 110, brightness: 95 }], ["Invert", { invert: 100 }], ["High Contrast", { contrast: 180 }], ["Soft Blur", { blur: backdrop ? 12 : 4 }], ["Warm", { sepia: 20, saturate: 125 }], ["Cool", { hueRotate: 35, saturate: 120 }]].map(([label, values]) => <button key={label as string} onClick={() => setEffectFilters((current) => ({ ...current, ...(values as Partial<typeof effectFilters>) }))}>{label as string}</button>)}</div>
-    {(["blur", "brightness", "contrast", "grayscale", "hueRotate", "invert", "opacity", "saturate", "sepia"] as const).map((key) => <label className="css-range" key={key}>{key} <input type="range" min="0" max={key === "blur" ? 32 : key === "hueRotate" ? 360 : key === "brightness" || key === "contrast" || key === "saturate" ? 220 : 100} value={effectFilters[key]} onChange={(event) => setEffectFilters((current) => ({ ...current, [key]: Number(event.target.value) }))} /><span>{effectFilters[key]}{key === "blur" ? "px" : key === "hueRotate" ? "Ãƒâ€šÃ‚Â°" : "%"}</span></label>)}
+    {(["blur", "brightness", "contrast", "grayscale", "hueRotate", "invert", "opacity", "saturate", "sepia"] as const).map((key) => <label className="css-range" key={key}>{key} <input type="range" min="0" max={key === "blur" ? 32 : key === "hueRotate" ? 360 : key === "brightness" || key === "contrast" || key === "saturate" ? 220 : 100} value={effectFilters[key]} onChange={(event) => setEffectFilters((current) => ({ ...current, [key]: Number(event.target.value) }))} /><span>{effectFilters[key]}{key === "blur" ? "px" : key === "hueRotate" ? "°" : "%"}</span></label>)}
   </>;
   const renderBackdropFilter = () => renderEffectFilterSliders(true);
   const renderFilterGenerator = () => renderEffectFilterSliders(false);

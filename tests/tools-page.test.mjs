@@ -5,11 +5,19 @@ import { resolve } from "node:path";
 
 test("tools page Vietnamese interface copy is stored as readable UTF-8", () => {
   const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");
-  assert.match(page, /filter: "Lọc công cụ\.\.\."/);
-  assert.match(page, /quick: "Tìm nhanh bất kỳ công cụ nào\.\.\."/);
-  assert.match(page, /badge: "DK Coder · Toolbox"/);
-  assert.match(page, /lead: "Bộ tiện ích dành cho lập trình, thiết kế và xử lý nội dung — nhanh, riêng tư và ngay trong trình duyệt\."/);
-  assert.doesNotMatch(page, /Ã|Â|â€|âŒ|á»|áº|Æ/);
+  assert.match(page, /filter: "L\u1ecdc c\u00f4ng c\u1ee5\.\.\."/u);
+  assert.match(page, /quick: "T\u00ecm nhanh b\u1ea5t k\u1ef3 c\u00f4ng c\u1ee5 n\u00e0o\.\.\."/u);
+  assert.match(page, /badge: "DK Coder \u00b7 Toolbox"/u);
+  assert.match(page, /lead: "B\u1ed9 ti\u1ec7n \u00edch d\u00e0nh cho l\u1eadp tr\u00ecnh, thi\u1ebft k\u1ebf, v\u00e0 x\u1eed l\u00fd n\u1ed9i dung \u2014 nhanh, ri\u00eang t\u01b0 v\u00e0 ngay trong tr\u00ecnh duy\u1ec7t\."/u);
+  assert.match(page, /<kbd>Ctrl K<\/kbd>/u);
+  const badTokens = [
+    String.fromCharCode(0x00c3),
+    String.fromCharCode(0x00c2),
+    String.fromCharCode(0x00e2, 0x20ac),
+    String.fromCharCode(0x00e2, 0x0152),
+    String.fromCharCode(0x00c3, 0x00a1, 0x00c2),
+  ];
+  for (const token of badTokens) assert.equal(page.includes(token), false, `Unexpected mojibake token ${JSON.stringify(token)}`);
 });
 test("tools sidebar keeps its scroll position while changing tool collections", () => {
   const page = readFileSync(resolve("app/tools/page.tsx"), "utf8");

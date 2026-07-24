@@ -71,7 +71,7 @@ export function parseEnv(source: string) {
 export function formatEnv(source: string, options: { sortKeys?: boolean; stripComments?: boolean; maskValues?: boolean } = {}) {
   const entries = Object.entries(parseEnv(options.stripComments ? source.replace(/^\s*#.*$/gm, "") : source));
   if (options.sortKeys) entries.sort(([a], [b]) => a.localeCompare(b));
-  return entries.map(([key, value]) => `${key}=${options.maskValues && value ? "â€¢".repeat(Math.max(6, Math.min(value.length, 16))) : value}`).join("\n");
+  return entries.map(([key, value]) => `${key}=${options.maskValues && value ? "•".repeat(Math.max(6, Math.min(value.length, 16))) : value}`).join("\n");
 }
 export function envToJson(source: string) { return JSON.stringify(parseEnv(source), null, 2); }
 export function jsonToEnv(source: string) { return Object.entries(asRecord(JSON.parse(source))).map(([key, value]) => `${key}=${typeof value === "string" ? value : JSON.stringify(value)}`).join("\n"); }
