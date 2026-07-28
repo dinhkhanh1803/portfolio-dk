@@ -194,7 +194,7 @@ export default function NeonPulseGame() {
   const frameRef = useRef<number | null>(null);
   const previousTimeRef = useRef(0);
   const lastUiUpdateRef = useRef(0);
-  const [game, setGame] = useState(stateRef.current);
+  const [game, setGame] = useState<GameState>(() => createGame());
   const [highScore, setHighScore] = useState(0);
   const [muted, setMuted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -202,6 +202,13 @@ export default function NeonPulseGame() {
   const publish = useCallback((next: GameState) => {
     stateRef.current = next;
     setGame(next);
+    if (next.status === "game-over") {
+      setHighScore((current) => {
+        if (next.score <= current) return current;
+        window.localStorage.setItem(HIGH_SCORE_KEY, String(next.score));
+        return next.score;
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -210,13 +217,16 @@ export default function NeonPulseGame() {
     ).matches;
     const nextMuted = readBoolean(MUTED_KEY, false);
     const nextReduced = readBoolean(REDUCED_MOTION_KEY, prefersReduced);
-    setHighScore(readScore());
-    setMuted(nextMuted);
-    setReducedMotion(nextReduced);
     const audio = new NeonPulseAudio();
     audio.setMuted(nextMuted);
     audioRef.current = audio;
+    const hydratePreferences = window.setTimeout(() => {
+      setHighScore(readScore());
+      setMuted(nextMuted);
+      setReducedMotion(nextReduced);
+    }, 0);
     return () => {
+      window.clearTimeout(hydratePreferences);
       audio.dispose();
       audioRef.current = null;
     };
@@ -231,11 +241,6 @@ export default function NeonPulseGame() {
     window.localStorage.setItem(REDUCED_MOTION_KEY, String(reducedMotion));
   }, [reducedMotion]);
 
-  useEffect(() => {
-    if (game.status !== "game-over" || game.score <= highScore) return;
-    setHighScore(game.score);
-    window.localStorage.setItem(HIGH_SCORE_KEY, String(game.score));
-  }, [game.score, game.status, highScore]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
