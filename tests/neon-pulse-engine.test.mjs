@@ -70,3 +70,16 @@ test("game route exposes canvas, controls, and status overlays", () => {
   assert.match(game, /localStorage/);
   assert.match(game, /Space/);
 });
+test("neon pulse styles are scoped, responsive, and motion-aware", () => {
+  const css = readFileSync(
+    "app/playground/neon-pulse/neon-pulse.module.css",
+    "utf8",
+  );
+  assert.match(css, /\.gamePage/);
+  assert.match(css, /\.arena/);
+  assert.match(css, /\.hud/);
+  assert.match(css, /@media \(max-width: 760px\)/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /#2a9dab/);
+  assert.match(css, /#ef725f/);
+});

@@ -19,6 +19,7 @@ import {
 } from "react";
 import { useLanguage } from "../../language-provider";
 import { NeonPulseAudio } from "./neon-pulse-audio";
+import styles from "./neon-pulse.module.css";
 import {
   createGame,
   resolveHit,
@@ -397,17 +398,17 @@ export default function NeonPulseGame() {
         };
 
   return (
-    <main className="neonPulseGame" data-feedback={game.feedback ?? "idle"}>
-      <header className="neonPulseHeader">
+    <main className={styles.gamePage} data-feedback={game.feedback ?? "idle"}>
+      <header className={styles.header}>
         <div>
-          <Link href="/playground" className="neonPulseBack">
+          <Link href="/playground" className={styles.back}>
             <ArrowLeft size={15} /> {copy.back}
           </Link>
           <p>{copy.eyebrow}</p>
           <h1>{copy.title}</h1>
           <span>{copy.intro}</span>
         </div>
-        <div className="neonPulseHeaderActions">
+        <div className={styles.headerActions}>
           <button
             type="button"
             onClick={() => setMuted((value) => !value)}
@@ -426,26 +427,26 @@ export default function NeonPulseGame() {
         </div>
       </header>
 
-      <section className="neonPulseLayout">
-        <div className="neonPulseArenaCard">
-          <div className="neonPulseHud">
+      <section className={styles.layout}>
+        <div className={styles.arenaCard}>
+          <div className={styles.hud}>
             <div><span>{copy.score}</span><strong>{game.score.toLocaleString()}</strong></div>
             <div><span>{copy.combo}</span><strong>{game.combo}x</strong></div>
             <div><span>{copy.time}</span><strong>{Math.floor(game.elapsedMs / 1000)}s</strong></div>
           </div>
 
-          <div className="neonPulseArena">
+          <div className={styles.arena}>
             <canvas
               ref={canvasRef}
               onPointerDown={() => void attemptHit()}
               aria-label="Neon Pulse game arena"
             />
-            <output className="neonPulseFeedback" aria-live="polite" key={game.feedbackId}>
+            <output className={styles.feedback} aria-live="polite" key={game.feedbackId}>
               {gradeLabel(game.feedback)}
             </output>
 
             {game.status !== "playing" && (
-              <div className="neonPulseOverlay">
+              <div className={styles.overlay}>
                 <Sparkles size={28} />
                 <h2>
                   {game.status === "ready"
@@ -473,18 +474,18 @@ export default function NeonPulseGame() {
             )}
           </div>
 
-          <div className="neonPulseInputHint">
+          <div className={styles.inputHint}>
             <span>SPACE</span>
             <p>{copy.tip}</p>
           </div>
         </div>
 
-        <aside className="neonPulseStats">
-          <div className="neonPulseBest">
+        <aside className={styles.stats}>
+          <div className={styles.best}>
             <span>{copy.best}</span>
             <strong>{Math.max(highScore, game.score).toLocaleString()}</strong>
           </div>
-          <div className="neonPulseLives">
+          <div className={styles.lives}>
             <span>{copy.lives}</span>
             <div>
               {Array.from({ length: 3 }, (_, index) => (
@@ -497,13 +498,13 @@ export default function NeonPulseGame() {
               ))}
             </div>
           </div>
-          <div className="neonPulseRules">
+          <div className={styles.rules}>
             <h2>Perfect timing</h2>
             <p>Perfect <b>+100</b></p>
             <p>Good <b>+50</b></p>
             <p>Miss <b>-1 ♥</b></p>
           </div>
-          <label className="neonPulseMotion">
+          <label className={styles.motion}>
             <input
               type="checkbox"
               checked={reducedMotion}
