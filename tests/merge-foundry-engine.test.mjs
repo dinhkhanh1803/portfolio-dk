@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   canDeliver,
@@ -112,4 +113,18 @@ test("saved shifts are versioned, cloned, and validated", () => {
     parseSavedShift(JSON.stringify({ ...state, version: 99 })),
     null,
   );
+});
+test("merge foundry audio supports gameplay cues and cleanup", () => {
+  const source = readFileSync(
+    "app/playground/merge-foundry/merge-foundry-audio.ts",
+    "utf8",
+  );
+  assert.match(source, /class MergeFoundryAudio/);
+  assert.match(source, /playSlide\(/);
+  assert.match(source, /playMerge\(tier: MaterialTier\)/);
+  assert.match(source, /playDelivery\(combo: number\)/);
+  assert.match(source, /playInvalid\(/);
+  assert.match(source, /playOutcome\(won: boolean\)/);
+  assert.match(source, /setMuted\(muted: boolean\)/);
+  assert.match(source, /dispose\(\)/);
 });
