@@ -25,6 +25,17 @@ function isBoard(value: unknown): value is Board {
   );
 }
 
+function boardHasMoves(board: Board) {
+  if (board.some((cell) => cell === null)) return true;
+  for (let row = 0; row < 5; row += 1) {
+    for (let column = 0; column < 5; column += 1) {
+      const index = row * 5 + column;
+      if (column < 4 && board[index] === board[index + 1]) return true;
+      if (row < 4 && board[index] === board[index + 5]) return true;
+    }
+  }
+  return false;
+}
 function isOrder(value: unknown): value is CraftingOrder {
   if (!value || typeof value !== "object") return false;
   const order = value as Partial<CraftingOrder>;
@@ -41,11 +52,12 @@ function isOrder(value: unknown): value is CraftingOrder {
 function isSnapshot(value: unknown): value is UndoSnapshot {
   if (!value || typeof value !== "object") return false;
   const snapshot = value as Partial<UndoSnapshot>;
-  return (
+  const structurallyValid =
     isBoard(snapshot.board) &&
     Number.isInteger(snapshot.seed) &&
     Number(snapshot.seed) >= 0 &&
-    Number.isFinite(snapshot.score) &&
+    Number(snapshot.seed) <= 0xffffffff &&
+    Number.isInteger(snapshot.score) &&
     Number(snapshot.score) >= 0 &&
     Number.isInteger(snapshot.combo) &&
     Number(snapshot.combo) >= 0 &&
@@ -57,22 +69,31 @@ function isSnapshot(value: unknown): value is UndoSnapshot {
     Array.isArray(snapshot.orders) &&
     snapshot.orders.length <= 3 &&
     snapshot.orders.every(isOrder) &&
+    new Set(snapshot.orders.map((order) => order.id)).size === snapshot.orders.length &&
     statuses.includes(snapshot.status as ShiftStatus) &&
     Number.isInteger(snapshot.moveCount) &&
-    Number(snapshot.moveCount) >= 0
-  );
+    Number(snapshot.moveCount) >= 0;
+
+  if (!structurallyValid) return false;
+  const valid = snapshot as UndoSnapshot;
+  if ((valid.status === "won") !== (valid.completedOrders === 8)) return false;
+  if (valid.status === "lost" && boardHasMoves(valid.board)) return false;
+  if (valid.status === "playing" && !boardHasMoves(valid.board)) return false;
+  return true;
 }
 
 function isGameState(value: unknown): value is GameState {
   if (!isSnapshot(value)) return false;
   const state = value as Partial<GameState>;
-  return (
-    state.version === 1 &&
-    typeof state.undoAvailable === "boolean" &&
-    (state.undoSnapshot === null || isSnapshot(state.undoSnapshot))
-  );
+  if (
+    state.version !== 1 ||
+    typeof state.undoAvailable !== "boolean" ||
+    !(state.undoSnapshot === null || isSnapshot(state.undoSnapshot))
+  ) {
+    return false;
+  }
+  return state.undoAvailable || state.undoSnapshot === null;
 }
-
 export function parseSavedShift(serialized: string | null): GameState | null {
   if (!serialized) return null;
   try {

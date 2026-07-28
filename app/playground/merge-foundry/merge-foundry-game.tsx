@@ -79,6 +79,7 @@ export default function MergeFoundryGame() {
         queue: "Đơn chế tạo",
         deliver: "Giao đơn",
         ready: "Sẵn sàng",
+        notReady: "Chưa đủ vật liệu",
         undo: "Hoàn tác",
         used: "Đã dùng",
         paused: "Xưởng đang tạm dừng",
@@ -102,6 +103,7 @@ export default function MergeFoundryGame() {
         queue: "Crafting orders",
         deliver: "Deliver",
         ready: "Ready",
+        notReady: "Not ready",
         undo: "Undo",
         used: "Used",
         paused: "Foundry paused",
@@ -200,9 +202,11 @@ export default function MergeFoundryGame() {
 
   const attemptSlide = useCallback(async (direction: Direction) => {
     if (lockedRef.current || paused) return;
+    lockedRef.current = true;
     await audioRef.current?.unlock();
     const transition = slide(stateRef.current, direction);
     if (!transition.changed) {
+      lockedRef.current = false;
       audioRef.current?.playInvalid();
       setAnnouncement(
         language === "vi" ? "Không thể trượt theo hướng đó." : "That move is blocked.",
@@ -250,9 +254,11 @@ export default function MergeFoundryGame() {
 
   const handleDelivery = useCallback(async (orderId: string) => {
     if (lockedRef.current || paused) return;
+    lockedRef.current = true;
     await audioRef.current?.unlock();
     const result = deliverOrder(stateRef.current, orderId);
     if (!result.delivered) {
+      lockedRef.current = false;
       audioRef.current?.playInvalid();
       return;
     }
@@ -264,14 +270,16 @@ export default function MergeFoundryGame() {
     if (result.state.status === "won") {
       audioRef.current?.playOutcome(true);
     }
-  }, [language, paused, publish]);
+    lockBriefly(reducedMotion ? 40 : 170);
+  }, [language, lockBriefly, paused, publish, reducedMotion]);
 
   const handleUndo = useCallback(() => {
+    if (lockedRef.current || paused) return;
     const next = undo(stateRef.current);
     if (next === stateRef.current) return;
     publish(next);
     setAnnouncement(language === "vi" ? "Đã hoàn tác nước đi." : "Move undone.");
-  }, [language, publish]);
+  }, [language, paused, publish]);
 
   const restart = useCallback(() => {
     const next = createGame(Date.now() >>> 0);
@@ -308,7 +316,7 @@ export default function MergeFoundryGame() {
   ];
 
   return (
-    <main className={styles.gamePage} data-status={game.status}>
+    <main className={styles.gamePage} data-status={game.status} data-reduced-motion={reducedMotion}>
       <header className={styles.header}>
         <div>
           <Link href="/playground" className={styles.back}>
@@ -397,7 +405,7 @@ export default function MergeFoundryGame() {
               <button
                 type="button"
                 onClick={handleUndo}
-                disabled={!game.undoAvailable || !game.undoSnapshot}
+                disabled={paused || !game.undoAvailable || !game.undoSnapshot}
               >
                 <Undo2 size={16} />
                 {game.undoAvailable ? copy.undo : copy.used}
@@ -453,7 +461,7 @@ export default function MergeFoundryGame() {
                     disabled={!ready}
                     onClick={() => void handleDelivery(order.id)}
                   >
-                    {ready && <Check size={15} />} {ready ? copy.deliver : copy.ready}
+                    {ready && <Check size={15} />} {ready ? copy.deliver : copy.notReady}
                   </button>
                 </article>
               );

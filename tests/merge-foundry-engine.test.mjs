@@ -114,6 +114,36 @@ test("saved shifts are versioned, cloned, and validated", () => {
     null,
   );
 });
+test("new shifts open with Scrap, Copper, and Steel orders", () => {
+  const first = createGame(8);
+  const second = createGame(99);
+  assert.deepEqual(first.orders.map((order) => order.tier), [1, 2, 3]);
+  assert.deepEqual(second.orders.map((order) => order.tier), [1, 2, 3]);
+  assert.ok(first.orders.every((order) => order.quantity === 1));
+});
+
+test("saved shifts reject contradictory game state", () => {
+  const state = createGame(8);
+  assert.equal(
+    parseSavedShift(JSON.stringify({ ...state, status: "won" })),
+    null,
+  );
+  assert.equal(
+    parseSavedShift(JSON.stringify({
+      ...state,
+      orders: [state.orders[0], state.orders[0]],
+    })),
+    null,
+  );
+  assert.equal(
+    parseSavedShift(JSON.stringify({
+      ...state,
+      undoAvailable: false,
+      undoSnapshot: { ...state, undoAvailable: undefined, undoSnapshot: undefined },
+    })),
+    null,
+  );
+});
 test("merge foundry audio supports gameplay cues and cleanup", () => {
   const source = readFileSync(
     "app/playground/merge-foundry/merge-foundry-audio.ts",
@@ -143,6 +173,8 @@ test("merge foundry route exposes board, orders, controls, and persistence", () 
   assert.match(game, /aria-live="polite"/);
   assert.match(game, /deliverOrder/);
   assert.match(game, /undo/);
+  assert.match(game, /lockedRef\.current = true;[\s\S]*?await audioRef\.current\?\.unlock/);
+  assert.match(game, /disabled=\{paused \|\| !game\.undoAvailable/);
 });
 test("merge foundry styles are responsive, themed, and motion-aware", () => {
   const css = readFileSync(
@@ -158,4 +190,14 @@ test("merge foundry styles are responsive, themed, and motion-aware", () => {
   assert.match(css, /\.tile\[data-tier="5"\]/);
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /data-reduced-motion="true"/);
+  assert.match(css, /\.directionPad\s*\{[\s\S]*?display:\s*grid/);
+});
+test("Games hub lists and filters both playable games", () => {
+  const page = readFileSync("app/playground/page.tsx", "utf8");
+  assert.match(page, /\/playground\/merge-foundry/);
+  assert.match(page, /Merge Foundry/);
+  assert.match(page, /Puzzle/);
+  assert.match(page, /Strategy/);
+  assert.match(page, /copy\.count\(visibleGames\.length\)/);
 });

@@ -173,14 +173,14 @@
 
 .gameGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
 }
 
 .gameCard {
   min-height: 340px;
   display: grid;
-  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
+  grid-template-columns: 1fr;
   overflow: hidden;
   border: 1px solid var(--games-line);
   border-radius: 25px;
@@ -191,7 +191,7 @@
 }
 
 .visual {
-  min-height: 340px;
+  min-height: 260px;
   position: relative;
   display: grid;
   place-items: center;
@@ -370,6 +370,72 @@
   }
 }
 
+.foundryVisual {
+  background:
+    linear-gradient(rgba(245, 189, 73, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 189, 73, 0.028) 1px, transparent 1px),
+    radial-gradient(circle, rgba(245, 189, 73, 0.12), transparent 62%),
+    #071218;
+  background-size: 28px 28px, 28px 28px, auto, auto;
+}
+
+.foundryVisual::after {
+  width: 78%;
+  border-radius: 24px;
+  transform: rotate(-4deg);
+}
+
+.foundryPreview {
+  width: min(68%, 245px);
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(245, 225, 183, 0.1);
+  border-radius: 18px;
+  background: rgba(3, 12, 17, 0.72);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+  transform: rotate(2deg);
+}
+
+.foundryPreview i {
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.foundryPreview i[data-tier="1"] { background: linear-gradient(145deg, #46565c, #2b393f); }
+.foundryPreview i[data-tier="2"] { background: linear-gradient(145deg, #bd7b50, #7c492f); }
+.foundryPreview i[data-tier="3"] { background: linear-gradient(145deg, #dce7e8, #82979f); }
+.foundryPreview i[data-tier="4"] {
+  background: linear-gradient(145deg, #36c7ca, #147d7a);
+  box-shadow: 0 0 18px rgba(42, 157, 171, 0.36);
+}
+.foundryPreview i[data-tier="5"] {
+  clip-path: polygon(50% 0, 94% 22%, 100% 72%, 72% 100%, 27% 100%, 0 72%, 6% 22%);
+  background: linear-gradient(145deg, #ffe79a, #f5bd49 55%, #d58b20);
+  box-shadow: 0 0 20px rgba(245, 189, 73, 0.38);
+}
+
+.mergeMark {
+  position: absolute;
+  right: -11px;
+  bottom: -11px;
+  padding: 5px;
+  border-radius: 9px;
+  background: #ef725f;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(239, 114, 95, 0.32);
+}
+
+@media (max-width: 900px) {
+  .gameGrid {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 760px) {
   .page {
     width: calc(100% - 20px);

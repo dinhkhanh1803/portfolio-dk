@@ -396,7 +396,7 @@
 }
 
 .directionPad {
-  display: none;
+  display: grid;
   grid-template-columns: repeat(4, 42px);
   justify-content: center;
   gap: 7px;
@@ -660,6 +660,14 @@
   }
 }
 
+.gamePage[data-reduced-motion="true"] *,
+.gamePage[data-reduced-motion="true"] *::before,
+.gamePage[data-reduced-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
 @media (prefers-reduced-motion: reduce) {
   .gamePage *,
   .gamePage *::before,

@@ -198,10 +198,15 @@ export function createGame(seed = Date.now() >>> 0): GameState {
   board = second.board;
   nextSeed = second.seed;
   const orders: CraftingOrder[] = [];
-  while (orders.length < 3) {
-    const generated = generateOrder(nextSeed, orders.length);
-    orders.push(generated.order);
-    nextSeed = generated.seed;
+  const openingTiers: MaterialTier[] = [1, 2, 3];
+  for (const [index, tier] of openingTiers.entries()) {
+    const idRoll = nextRandom(nextSeed);
+    orders.push({
+      id: `opening-${index}-${idRoll.seed.toString(36)}`,
+      tier,
+      quantity: 1,
+    });
+    nextSeed = idRoll.seed;
   }
   return {
     version: 1,

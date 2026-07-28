@@ -1,52 +1,128 @@
 "use client";
 
-import { ArrowUpRight, Gamepad2, Search, Volume2, Zap } from "lucide-react";
+import {
+  ArrowUpRight,
+  Brain,
+  Gamepad2,
+  Grid3X3,
+  Move,
+  Search,
+  Timer,
+  Volume2,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useLanguage } from "../language-provider";
 import styles from "./playground.module.css";
 
-const categories = ["All", "Arcade", "Reaction", "Endless", "Skill"] as const;
+const categories = [
+  "All",
+  "Arcade",
+  "Reaction",
+  "Endless",
+  "Skill",
+  "Puzzle",
+  "Strategy",
+  "Casual",
+] as const;
+
+type Category = (typeof categories)[number];
+type FeatureIcon = "zap" | "audio" | "controls" | "time" | "brain" | "grid";
+
+type GameCard = {
+  slug: string;
+  href: string;
+  title: string;
+  categories: Category[];
+  categoryLabel: string;
+  description: string;
+  features: Array<{ icon: FeatureIcon; label: string }>;
+  visual: "pulse" | "foundry";
+};
+
+const featureIcons = {
+  zap: Zap,
+  audio: Volume2,
+  controls: Gamepad2,
+  time: Timer,
+  brain: Brain,
+  grid: Grid3X3,
+};
 
 export default function PlaygroundPage() {
   const { language } = useLanguage();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<(typeof categories)[number]>("All");
+  const [category, setCategory] = useState<Category>("All");
   const copy = language === "vi"
     ? {
         title: "Trò chơi",
         lead: "Những game trình duyệt ngắn, mượt và có thể chơi ngay — không cài đặt, không tải dữ liệu lên máy chủ.",
         search: "Tìm trò chơi...",
         featured: "Có thể chơi ngay",
-        count: "1 game đang hoạt động",
-        description: "Bắt đúng nhịp sáng, giữ combo và sống sót khi pulse tăng tốc qua từng giai đoạn.",
+        count: (count: number) => `${count} game đang hoạt động`,
         play: "Chơi ngay",
-        empty: "Chưa có game phù hợp. Các thể loại mới sẽ được bổ sung dần.",
+        empty: "Chưa có game phù hợp. Hãy thử một thể loại khác.",
       }
     : {
         title: "Games",
         lead: "Short, polished browser games you can play instantly — no installs and no server uploads.",
         search: "Search games...",
         featured: "Ready to play",
-        count: "1 live game",
-        description: "Catch the bright zone, hold your combo, and survive as the pulse accelerates through each stage.",
+        count: (count: number) => `${count} live ${count === 1 ? "game" : "games"}`,
         play: "Play now",
-        empty: "No matching game yet. More genres will be added over time.",
+        empty: "No matching game yet. Try another category.",
       };
 
-  const visible = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    const matchesText = !normalized || "neon pulse arcade reaction endless skill".includes(normalized);
-    const matchesCategory = category === "All" || categories.slice(1).includes(category);
+  const games: GameCard[] = [
+    {
+      slug: "neon-pulse",
+      href: "/playground/neon-pulse",
+      title: "Neon Pulse",
+      categories: ["Arcade", "Reaction", "Endless", "Skill"],
+      categoryLabel: "ARCADE · REACTION · ENDLESS · SKILL",
+      description: language === "vi"
+        ? "Bắt đúng nhịp sáng, giữ combo và sống sót khi pulse tăng tốc qua từng giai đoạn."
+        : "Catch the bright zone, hold your combo, and survive as the pulse accelerates through each stage.",
+      features: [
+        { icon: "zap", label: "60–90s runs" },
+        { icon: "audio", label: "Web Audio" },
+        { icon: "controls", label: "Touch + Keyboard" },
+      ],
+      visual: "pulse",
+    },
+    {
+      slug: "merge-foundry",
+      href: "/playground/merge-foundry",
+      title: "Merge Foundry",
+      categories: ["Puzzle", "Strategy", "Casual"],
+      categoryLabel: "PUZZLE · STRATEGY · CASUAL",
+      description: language === "vi"
+        ? "Trượt và hợp nhất vật liệu, tính toán khoảng trống rồi hoàn thành tám đơn chế tạo."
+        : "Slide and merge materials, manage your space, and complete eight crafting orders.",
+      features: [
+        { icon: "time", label: "5–10 min shifts" },
+        { icon: "brain", label: "Turn-based" },
+        { icon: "grid", label: "Touch + Keyboard" },
+      ],
+      visual: "foundry",
+    },
+  ];
+
+  const normalized = query.trim().toLowerCase();
+  const visibleGames = games.filter((game) => {
+    const searchText = `${game.title} ${game.categoryLabel} ${game.description}`.toLowerCase();
+    const matchesText = !normalized || searchText.includes(normalized);
+    const matchesCategory = category === "All" || game.categories.includes(category);
     return matchesText && matchesCategory;
-  }, [category, query]);
+  });
 
   return (
     <main className={styles.page}>
       <header className={styles.hero}>
         <div className={styles.titleRow}>
           <h1>{copy.title}</h1>
-          <span>1</span>
+          <span>2</span>
         </div>
         <p>{copy.lead}</p>
       </header>
@@ -62,46 +138,66 @@ export default function PlaygroundPage() {
           />
         </label>
         <div className={styles.filters}>
-          {categories.map((item) => (
-            <button
-              type="button"
-              key={item}
-              className={`${styles.filter} ${category === item ? styles.filterActive : ""}`}
-              aria-pressed={category === item}
-              onClick={() => setCategory(item)}
-            >
-              {item} {item === "All" ? "(1)" : ""}
-            </button>
-          ))}
+          {categories.map((item) => {
+            const count = item === "All"
+              ? games.length
+              : games.filter((game) => game.categories.includes(item)).length;
+            return (
+              <button
+                type="button"
+                key={item}
+                className={`${styles.filter} ${category === item ? styles.filterActive : ""}`}
+                aria-pressed={category === item}
+                onClick={() => setCategory(item)}
+              >
+                {item} ({count})
+              </button>
+            );
+          })}
         </div>
       </section>
 
       <div className={styles.sectionHead}>
         <h2>{copy.featured}</h2>
-        <span>{copy.count}</span>
+        <span>{copy.count(visibleGames.length)}</span>
       </div>
 
-      {visible ? (
+      {visibleGames.length > 0 ? (
         <section className={styles.gameGrid}>
-          <article className={styles.gameCard}>
-            <div className={styles.visual} aria-hidden="true">
-              <span className={styles.liveBadge}>LIVE</span>
-              <div className={styles.orbit}><strong>PULSE</strong></div>
-            </div>
-            <div className={styles.cardContent}>
-              <p className={styles.category}>ARCADE · REACTION · ENDLESS · SKILL</p>
-              <h3>Neon Pulse</h3>
-              <p className={styles.description}>{copy.description}</p>
-              <div className={styles.features}>
-                <span><Zap size={14} /> 60–90s runs</span>
-                <span><Volume2 size={14} /> Web Audio</span>
-                <span><Gamepad2 size={14} /> Touch + Keyboard</span>
+          {visibleGames.map((game) => (
+            <article className={styles.gameCard} key={game.slug}>
+              <div
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : ""}`}
+                aria-hidden="true"
+              >
+                <span className={styles.liveBadge}>LIVE</span>
+                {game.visual === "pulse" ? (
+                  <div className={styles.orbit}><strong>PULSE</strong></div>
+                ) : (
+                  <div className={styles.foundryPreview}>
+                    {[1, 0, 2, 0, 1, 3, 3, 0, 0, 2, 4, 0, 1, 0, 5, 0].map((tier, index) => (
+                      <i data-tier={tier || undefined} key={index} />
+                    ))}
+                    <Move className={styles.mergeMark} size={23} />
+                  </div>
+                )}
               </div>
-              <Link href="/playground/neon-pulse" className={styles.playButton}>
-                {copy.play} <ArrowUpRight size={17} />
-              </Link>
-            </div>
-          </article>
+              <div className={styles.cardContent}>
+                <p className={styles.category}>{game.categoryLabel}</p>
+                <h3>{game.title}</h3>
+                <p className={styles.description}>{game.description}</p>
+                <div className={styles.features}>
+                  {game.features.map((feature) => {
+                    const Icon = featureIcons[feature.icon];
+                    return <span key={feature.label}><Icon size={14} /> {feature.label}</span>;
+                  })}
+                </div>
+                <Link href={game.href} className={styles.playButton}>
+                  {copy.play} <ArrowUpRight size={17} />
+                </Link>
+              </div>
+            </article>
+          ))}
         </section>
       ) : (
         <div className={styles.empty}>{copy.empty}</div>
