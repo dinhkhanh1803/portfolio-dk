@@ -92,3 +92,21 @@ test("Games hub promotes Neon Pulse as playable", () => {
   assert.match(css, /\.gameGrid/);
   assert.match(css, /\.playButton/);
 });
+test("Games surfaces follow the global light and dark theme", () => {
+  const hubCss = readFileSync("app/playground/playground.module.css", "utf8");
+  const gameCss = readFileSync(
+    "app/playground/neon-pulse/neon-pulse.module.css",
+    "utf8",
+  );
+
+  assert.match(hubCss, /\.page\s*\{[\s\S]*?--games-bg:\s*#f4efe5/);
+  assert.match(
+    hubCss,
+    /:global\(\[data-theme="dark"\]\) \.page\s*\{[\s\S]*?--games-bg:\s*#081318/,
+  );
+  assert.match(gameCss, /\.gamePage\s*\{[\s\S]*?--game-bg:\s*#f4efe5/);
+  assert.match(
+    gameCss,
+    /:global\(\[data-theme="dark"\]\) \.gamePage\s*\{[\s\S]*?--game-bg:\s*#071116/,
+  );
+});
