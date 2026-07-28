@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   createGame,
@@ -44,4 +45,14 @@ test("difficulty rises and stepping wraps the pulse angle", () => {
   assert.ok(stepped.targetWidth < state.targetWidth);
   assert.ok(stepped.pulseAngle >= 0 && stepped.pulseAngle < Math.PI * 2);
 });
-
+test("audio controller supports hit feedback, mute, and disposal", () => {
+  const source = readFileSync(
+    "app/playground/neon-pulse/neon-pulse-audio.ts",
+    "utf8",
+  );
+  assert.match(source, /class NeonPulseAudio/);
+  assert.match(source, /playHit\(grade: HitGrade, combo: number\)/);
+  assert.match(source, /setMuted\(muted: boolean\)/);
+  assert.match(source, /dispose\(\)/);
+  assert.match(source, /AudioContext/);
+});
