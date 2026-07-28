@@ -144,3 +144,18 @@ test("merge foundry route exposes board, orders, controls, and persistence", () 
   assert.match(game, /deliverOrder/);
   assert.match(game, /undo/);
 });
+test("merge foundry styles are responsive, themed, and motion-aware", () => {
+  const css = readFileSync(
+    "app/playground/merge-foundry/merge-foundry.module.css",
+    "utf8",
+  );
+  assert.match(css, /\.gamePage\s*\{[\s\S]*?--foundry-bg:\s*#f4efe5/);
+  assert.match(
+    css,
+    /:global\(\[data-theme="dark"\]\) \.gamePage\s*\{[\s\S]*?--foundry-bg:\s*#071116/,
+  );
+  assert.match(css, /\.board/);
+  assert.match(css, /\.tile\[data-tier="5"\]/);
+  assert.match(css, /@media \(max-width: 760px\)/);
+  assert.match(css, /prefers-reduced-motion/);
+});
