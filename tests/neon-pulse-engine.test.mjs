@@ -83,3 +83,12 @@ test("neon pulse styles are scoped, responsive, and motion-aware", () => {
   assert.match(css, /#2a9dab/);
   assert.match(css, /#ef725f/);
 });
+test("Games hub promotes Neon Pulse as playable", () => {
+  const page = readFileSync("app/playground/page.tsx", "utf8");
+  const css = readFileSync("app/playground/playground.module.css", "utf8");
+  assert.match(page, /href="\/playground\/neon-pulse"/);
+  assert.match(page, /Neon Pulse/);
+  assert.match(page, /Play now|Chơi ngay/);
+  assert.match(css, /\.gameGrid/);
+  assert.match(css, /\.playButton/);
+});
