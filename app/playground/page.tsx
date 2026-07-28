@@ -38,7 +38,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry";
+  visual: "pulse" | "foundry" | "hopper";
 };
 
 const featureIcons = {
@@ -107,6 +107,22 @@ export default function PlaygroundPage() {
       ],
       visual: "foundry",
     },
+    {
+      slug: "sky-hopper",
+      href: "/playground/sky-hopper",
+      title: "Sky Hopper",
+      categories: ["Arcade", "Reaction", "Endless", "Skill"],
+      categoryLabel: "ARCADE · REACTION · ENDLESS · SKILL",
+      description: language === "vi"
+        ? "Chạm để bay, lách qua các cổng mây và giữ nhịp khi tốc độ tăng dần."
+        : "Tap to fly through cloud gates and hold your rhythm as the speed rises.",
+      features: [
+        { icon: "zap", label: "Endless run" },
+        { icon: "audio", label: "Web Audio" },
+        { icon: "controls", label: "Tap + Space" },
+      ],
+      visual: "hopper",
+    },
   ];
 
   const normalized = query.trim().toLowerCase();
@@ -122,7 +138,7 @@ export default function PlaygroundPage() {
       <header className={styles.hero}>
         <div className={styles.titleRow}>
           <h1>{copy.title}</h1>
-          <span>2</span>
+          <span>{games.length}</span>
         </div>
         <p>{copy.lead}</p>
       </header>
@@ -167,18 +183,24 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
                 {game.visual === "pulse" ? (
                   <div className={styles.orbit}><strong>PULSE</strong></div>
-                ) : (
+                ) : game.visual === "foundry" ? (
                   <div className={styles.foundryPreview}>
                     {[1, 0, 2, 0, 1, 3, 3, 0, 0, 2, 4, 0, 1, 0, 5, 0].map((tier, index) => (
                       <i data-tier={tier || undefined} key={index}>{tier ? 2 ** tier : null}</i>
                     ))}
                     <Move className={styles.mergeMark} size={23} />
+                  </div>
+                ) : (
+                  <div className={styles.hopperPreview}>
+                    <i className={styles.previewPipeTop} />
+                    <span className={styles.previewBird}>↗</span>
+                    <i className={styles.previewPipeBottom} />
                   </div>
                 )}
               </div>
