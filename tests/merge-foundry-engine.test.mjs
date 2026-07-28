@@ -2,65 +2,61 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  canDeliver,
   createGame,
-  deliverOrder,
   hasMoves,
   moveBoard,
   slide,
+  TARGET_VALUE,
   undo,
 } from "../app/playground/merge-foundry/merge-foundry-engine.ts";
 import {
-  parseSavedShift,
-  serializeShift,
+  HIGH_SCORE_KEY,
+  parseSavedGame,
+  serializeGame,
 } from "../app/playground/merge-foundry/merge-foundry-storage.ts";
 
-const board = (...cells) => cells;
+const emptyBoard = () => Array(16).fill(null);
 
-test("slides and merges left without double-merging a result", () => {
-  const input = board(
-    1, 1, 1, 1, null,
-    ...Array(20).fill(null),
-  );
-  const result = moveBoard(input, "left");
-
-  assert.equal(result.changed, true);
-  assert.deepEqual(result.board.slice(0, 5), [2, 2, null, null, null]);
-  assert.deepEqual(result.merges.map((item) => item.tier), [2, 2]);
+test("classic 2048 merges once per move on a 4x4 board", () => {
+  const board = [2, 2, 2, 2, ...Array(12).fill(null)];
+  const result = moveBoard(board, "left");
+  assert.deepEqual(result.board.slice(0, 4), [4, 4, null, null]);
+  assert.deepEqual(result.merges.map((merge) => merge.value), [4, 4]);
+  assert.equal(result.scoreGained, 8);
 });
 
-test("moves the same line consistently in all four directions", () => {
-  const horizontal = board(
-    1, null, 1, null, null,
-    ...Array(20).fill(null),
-  );
-  assert.deepEqual(
-    moveBoard(horizontal, "right").board.slice(0, 5),
-    [null, null, null, null, 2],
-  );
+test("moves rows and columns consistently in all directions", () => {
+  const horizontal = [2, null, 2, null, ...Array(12).fill(null)];
+  assert.deepEqual(moveBoard(horizontal, "right").board.slice(0, 4), [null, null, null, 4]);
 
-  const vertical = Array(25).fill(null);
-  vertical[0] = 1;
-  vertical[10] = 1;
-  assert.equal(moveBoard(vertical, "down").board[20], 2);
-  assert.equal(moveBoard(vertical, "up").board[0], 2);
+  const vertical = emptyBoard();
+  vertical[0] = 4;
+  vertical[8] = 4;
+  assert.equal(moveBoard(vertical, "down").board[12], 8);
+  assert.equal(moveBoard(vertical, "up").board[0], 8);
 });
-test("valid moves spawn deterministically and invalid moves do nothing", () => {
-  const initial = {
-    ...createGame(1234),
-    board: [null, 1, ...Array(23).fill(null)],
-  };
-  const first = slide(initial, "left");
-  const replay = slide(
-    { ...createGame(1234), board: [null, 1, ...Array(23).fill(null)] },
-    "left",
-  );
-  assert.deepEqual(first.state, replay.state);
-  assert.equal(first.changed, true);
-  assert.equal(first.spawnedIndex, replay.spawnedIndex);
 
-  const checker = Array.from({ length: 25 }, (_, index) =>
-    ((Math.floor(index / 5) + (index % 5)) % 2 === 0 ? 1 : 2),
+test("new games start with two deterministic 2 or 4 tiles", () => {
+  const game = createGame(42);
+  const replay = createGame(42);
+  const tiles = game.board.filter((cell) => cell !== null);
+  assert.equal(game.board.length, 16);
+  assert.equal(tiles.length, 2);
+  assert.ok(tiles.every((value) => value === 2 || value === 4));
+  assert.deepEqual(game, replay);
+  assert.equal(TARGET_VALUE, 2048);
+});
+
+test("valid moves spawn one tile and invalid moves do nothing", () => {
+  const board = emptyBoard();
+  board[1] = 2;
+  const initial = { ...createGame(5), board };
+  const moved = slide(initial, "left");
+  assert.equal(moved.changed, true);
+  assert.equal(moved.state.board.filter(Boolean).length, 2);
+
+  const checker = Array.from({ length: 16 }, (_, index) =>
+    ((Math.floor(index / 4) + (index % 4)) % 2 === 0 ? 2 : 4),
   );
   const blocked = { ...initial, board: checker };
   const invalid = slide(blocked, "left");
@@ -69,33 +65,23 @@ test("valid moves spawn deterministically and invalid moves do nothing", () => {
   assert.equal(hasMoves(checker), false);
 });
 
-test("delivery removes materials, scores, and wins the eighth order", () => {
-  const initial = createGame(7);
-  const order = { id: "a", tier: 4, quantity: 1 };
-  const state = {
-    ...initial,
-    board: [4, ...Array(24).fill(null)],
-    orders: [order],
-    completedOrders: 7,
-  };
-
-  assert.equal(canDeliver(state, "a"), true);
-  const result = deliverOrder(state, "a");
-  assert.equal(result.delivered, true);
-  assert.equal(result.state.board[0], null);
-  assert.equal(result.state.completedOrders, 8);
+test("merging 1024 tiles creates 2048 and wins", () => {
+  const board = emptyBoard();
+  board[0] = 1024;
+  board[1] = 1024;
+  const initial = { ...createGame(7), board, score: 100 };
+  const result = slide(initial, "left");
+  assert.equal(result.state.board[0], 2048);
+  assert.equal(result.state.score, 2148);
   assert.equal(result.state.status, "won");
-  assert.ok(result.state.score > state.score);
 });
 
-test("undo restores the exact previous state and is consumed", () => {
-  const initial = {
-    ...createGame(42),
-    board: [null, 1, ...Array(23).fill(null)],
-  };
+test("undo restores the exact previous move and is consumed", () => {
+  const board = emptyBoard();
+  board[1] = 2;
+  const initial = { ...createGame(9), board };
   const moved = slide(initial, "left").state;
   const restored = undo(moved);
-
   assert.deepEqual(restored.board, initial.board);
   assert.equal(restored.seed, initial.seed);
   assert.equal(restored.score, initial.score);
@@ -103,101 +89,51 @@ test("undo restores the exact previous state and is consumed", () => {
   assert.equal(restored.undoSnapshot, null);
 });
 
-test("saved shifts are versioned, cloned, and validated", () => {
-  const state = createGame(8);
-  const parsed = parseSavedShift(serializeShift(state));
-  assert.deepEqual(parsed, state);
-  assert.notEqual(parsed, state);
-  assert.equal(parseSavedShift("{bad"), null);
-  assert.equal(
-    parseSavedShift(JSON.stringify({ ...state, version: 99 })),
-    null,
-  );
-});
-test("new shifts open with Scrap, Copper, and Steel orders", () => {
-  const first = createGame(8);
-  const second = createGame(99);
-  assert.deepEqual(first.orders.map((order) => order.tier), [1, 2, 3]);
-  assert.deepEqual(second.orders.map((order) => order.tier), [1, 2, 3]);
-  assert.ok(first.orders.every((order) => order.quantity === 1));
+test("saved games are versioned, cloned, and reject impossible state", () => {
+  const game = createGame(8);
+  assert.equal(HIGH_SCORE_KEY, "merge-foundry:2048:high-score");
+  const parsed = parseSavedGame(serializeGame(game));
+  assert.deepEqual(parsed, game);
+  assert.notEqual(parsed, game);
+  assert.equal(parseSavedGame("{bad"), null);
+  assert.equal(parseSavedGame(JSON.stringify({ ...game, version: 1 })), null);
+  assert.equal(parseSavedGame(JSON.stringify({ ...game, board: Array(16).fill(3) })), null);
+  assert.equal(parseSavedGame(JSON.stringify({ ...game, board: Array(16).fill("2") })), null);
+  assert.equal(parseSavedGame(JSON.stringify({ ...game, status: "won" })), null);
 });
 
-test("saved shifts reject contradictory game state", () => {
-  const state = createGame(8);
-  assert.equal(
-    parseSavedShift(JSON.stringify({ ...state, status: "won" })),
-    null,
-  );
-  assert.equal(
-    parseSavedShift(JSON.stringify({
-      ...state,
-      orders: [state.orders[0], state.orders[0]],
-    })),
-    null,
-  );
-  assert.equal(
-    parseSavedShift(JSON.stringify({
-      ...state,
-      undoAvailable: false,
-      undoSnapshot: { ...state, undoAvailable: undefined, undoSnapshot: undefined },
-    })),
-    null,
-  );
-});
-test("merge foundry audio supports gameplay cues and cleanup", () => {
-  const source = readFileSync(
-    "app/playground/merge-foundry/merge-foundry-audio.ts",
-    "utf8",
-  );
+test("audio supports 2048 gameplay cues", () => {
+  const source = readFileSync("app/playground/merge-foundry/merge-foundry-audio.ts", "utf8");
   assert.match(source, /class MergeFoundryAudio/);
   assert.match(source, /playSlide\(/);
-  assert.match(source, /playMerge\(tier: MaterialTier\)/);
-  assert.match(source, /playDelivery\(combo: number\)/);
+  assert.match(source, /playMerge\(value: TileValue\)/);
   assert.match(source, /playInvalid\(/);
   assert.match(source, /playOutcome\(won: boolean\)/);
-  assert.match(source, /setMuted\(muted: boolean\)/);
-  assert.match(source, /dispose\(\)/);
+  assert.doesNotMatch(source, /playDelivery|combo/);
 });
-test("merge foundry route exposes board, orders, controls, and persistence", () => {
-  const page = readFileSync("app/playground/merge-foundry/page.tsx", "utf8");
-  const game = readFileSync(
-    "app/playground/merge-foundry/merge-foundry-game.tsx",
-    "utf8",
-  );
-  assert.match(page, /MergeFoundryGame/);
-  assert.match(page, /metadata/);
+
+test("route exposes a classic 2048 board without crafting orders", () => {
+  const game = readFileSync("app/playground/merge-foundry/merge-foundry-game.tsx", "utf8");
   assert.match(game, /role="grid"/);
-  assert.match(game, /ArrowUp|ArrowDown|ArrowLeft|ArrowRight/);
+  assert.match(game, /data-value=\{value\}/);
+  assert.match(game, /TARGET_VALUE/);
   assert.match(game, /onPointerDown/);
-  assert.match(game, /localStorage/);
   assert.match(game, /aria-live="polite"/);
-  assert.match(game, /deliverOrder/);
-  assert.match(game, /undo/);
-  assert.match(game, /lockedRef\.current = true;[\s\S]*?await audioRef\.current\?\.unlock/);
-  assert.match(game, /disabled=\{paused \|\| !game\.undoAvailable/);
+  assert.doesNotMatch(game, /deliverOrder|Crafting orders|Đơn chế tạo/);
 });
-test("merge foundry styles are responsive, themed, and motion-aware", () => {
-  const css = readFileSync(
-    "app/playground/merge-foundry/merge-foundry.module.css",
-    "utf8",
-  );
-  assert.match(css, /\.gamePage\s*\{[\s\S]*?--foundry-bg:\s*#f4efe5/);
-  assert.match(
-    css,
-    /:global\(\[data-theme="dark"\]\) \.gamePage\s*\{[\s\S]*?--foundry-bg:\s*#071116/,
-  );
-  assert.match(css, /\.board/);
-  assert.match(css, /\.tile\[data-tier="5"\]/);
-  assert.match(css, /@media \(max-width: 760px\)/);
-  assert.match(css, /prefers-reduced-motion/);
+
+test("styles use a readable responsive 4x4 2048 board", () => {
+  const css = readFileSync("app/playground/merge-foundry/merge-foundry.module.css", "utf8");
+  assert.match(css, /grid-template-columns:\s*repeat\(4/);
+  assert.match(css, /\.tile\[data-value="2048"\]/);
+  assert.match(css, /\.tile span\s*\{[\s\S]*?font-size:\s*clamp\(24px/);
   assert.match(css, /data-reduced-motion="true"/);
-  assert.match(css, /\.directionPad\s*\{[\s\S]*?display:\s*grid/);
+  assert.match(css, /@media \(max-width: 760px\)/);
 });
-test("Games hub lists and filters both playable games", () => {
+
+test("Games hub still links to Merge Foundry", () => {
   const page = readFileSync("app/playground/page.tsx", "utf8");
   assert.match(page, /\/playground\/merge-foundry/);
   assert.match(page, /Merge Foundry/);
-  assert.match(page, /Puzzle/);
-  assert.match(page, /Strategy/);
-  assert.match(page, /copy\.count\(visibleGames\.length\)/);
+  assert.doesNotMatch(page, /5–10 min shifts/);
 });

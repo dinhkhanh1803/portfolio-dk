@@ -1,4 +1,4 @@
-import type { MaterialTier } from "./merge-foundry-engine";
+import type { TileValue } from "./merge-foundry-engine";
 
 type ToneOptions = {
   frequency: number;
@@ -85,44 +85,26 @@ export class MergeFoundryAudio {
     });
   }
 
-  playMerge(tier: MaterialTier) {
-    const notes = [0, 220, 293.66, 369.99, 493.88, 659.25];
-    const frequency = notes[tier];
+  playMerge(value: TileValue) {
+    const level = Math.log2(value);
+    const frequency = Math.min(880, 150 * 1.17 ** level);
     this.tone({
       frequency,
-      duration: 0.13 + tier * 0.012,
-      gain: 0.045 + tier * 0.008,
-      type: tier >= 4 ? "sine" : "triangle",
+      endFrequency: Math.min(1040, frequency * 1.16),
+      duration: Math.min(0.24, 0.1 + level * 0.012),
+      gain: Math.min(0.1, 0.035 + level * 0.006),
+      type: level >= 8 ? "sine" : "triangle",
     });
-    if (tier >= 4) {
+    if (value >= 256) {
       this.tone({
         frequency: frequency * 1.5,
-        duration: 0.11,
+        duration: 0.16,
         gain: 0.035,
         type: "sine",
-        delay: 0.025,
+        delay: 0.035,
       });
     }
   }
-
-  playDelivery(combo: number) {
-    const sequence = [392, 493.88, 587.33, 659.25];
-    const offset = Math.max(0, combo - 1) % sequence.length;
-    this.tone({
-      frequency: 118,
-      duration: 0.07,
-      gain: 0.055,
-      type: "square",
-    });
-    this.tone({
-      frequency: sequence[offset],
-      duration: 0.18,
-      gain: 0.075,
-      type: "sine",
-      delay: 0.045,
-    });
-  }
-
   playInvalid() {
     this.tone({
       frequency: 104,

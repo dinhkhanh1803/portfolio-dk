@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Check,
   Pause,
   Play,
   RotateCcw,
@@ -14,39 +13,31 @@ import {
   VolumeX,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../../language-provider";
 import { MergeFoundryAudio } from "./merge-foundry-audio";
 import {
-  canDeliver,
   createGame,
-  deliverOrder,
   slide,
+  TARGET_VALUE,
   undo,
   type Direction,
   type GameState,
-  type MaterialTier,
 } from "./merge-foundry-engine";
 import styles from "./merge-foundry.module.css";
 import {
+  GAME_KEY,
   HIGH_SCORE_KEY,
   MUTED_KEY,
-  parseSavedShift,
+  parseSavedGame,
   readStoredBoolean,
   readStoredScore,
   REDUCED_MOTION_KEY,
-  serializeShift,
-  SHIFT_KEY,
+  serializeGame,
 } from "./merge-foundry-storage";
 
 const SWIPE_THRESHOLD = 32;
-const START_SEED = 0x4d465247;
-const tierKeys = ["", "scrap", "copper", "steel", "core", "prism"] as const;
+const START_SEED = 0x32303438;
 const INITIAL_GAME = createGame(START_SEED);
 
 export default function MergeFoundryGame() {
@@ -65,88 +56,75 @@ export default function MergeFoundryGame() {
   const [mergedIndexes, setMergedIndexes] = useState<number[]>([]);
   const [spawnedIndex, setSpawnedIndex] = useState<number | null>(null);
 
-  const copy = language === "vi"
+  const copy = useMemo(() => language === "vi"
     ? {
         back: "Tất cả trò chơi",
-        eyebrow: "PUZZLE · CHIẾN THUẬT · THƯ GIÃN",
-        title: "Merge Foundry",
-        intro: "Trượt vật liệu, tạo chuỗi nâng cấp và hoàn thành tám đơn chế tạo.",
+        eyebrow: "PUZZLE · 2048 · THƯ GIÃN",
+        title: "Merge Foundry 2048",
+        intro: "Trượt các ô số, ghép hai ô giống nhau và chinh phục ô 2048.",
         score: "Điểm",
-        combo: "Combo",
-        orders: "Đơn đã giao",
+        best: "Kỷ lục",
         moves: "Nước đi",
-        board: "Bàn chế tạo",
-        queue: "Đơn chế tạo",
-        deliver: "Giao đơn",
-        ready: "Sẵn sàng",
-        notReady: "Chưa đủ vật liệu",
+        target: "Mục tiêu",
+        board: "Bàn 2048",
         undo: "Hoàn tác",
         used: "Đã dùng",
-        paused: "Xưởng đang tạm dừng",
+        paused: "Game đang tạm dừng",
         resume: "Tiếp tục",
-        won: "Hoàn thành ca sản xuất!",
-        lost: "Xưởng đã hết chỗ",
-        restart: "Bắt đầu ca mới",
+        won: "Bạn đã tạo được 2048!",
+        lost: "Không còn nước đi",
+        restart: "Chơi ván mới",
         motion: "Giảm hiệu ứng",
-        best: "Kỷ lục",
+        help: "Dùng phím mũi tên, nút điều hướng hoặc vuốt trên bàn. Hai ô cùng số sẽ hợp nhất.",
+        moved: "Đã di chuyển các ô.",
+        blocked: "Không thể đi theo hướng đó.",
+        merged: (count: number) => `Đã ghép ${count} cặp ô.`,
       }
     : {
         back: "All games",
-        eyebrow: "PUZZLE · STRATEGY · CASUAL",
-        title: "Merge Foundry",
-        intro: "Slide materials, build upgrade chains, and complete eight crafting orders.",
+        eyebrow: "PUZZLE · 2048 · CASUAL",
+        title: "Merge Foundry 2048",
+        intro: "Slide number tiles, merge matching pairs, and forge the 2048 tile.",
         score: "Score",
-        combo: "Combo",
-        orders: "Orders",
+        best: "Best",
         moves: "Moves",
-        board: "Crafting board",
-        queue: "Crafting orders",
-        deliver: "Deliver",
-        ready: "Ready",
-        notReady: "Not ready",
+        target: "Target",
+        board: "2048 board",
         undo: "Undo",
         used: "Used",
-        paused: "Foundry paused",
+        paused: "Game paused",
         resume: "Resume",
-        won: "Shift complete!",
-        lost: "The foundry is full",
-        restart: "Start new shift",
+        won: "You forged 2048!",
+        lost: "No moves left",
+        restart: "New game",
         motion: "Reduce effects",
-        best: "Best",
-      };
-
-  const tierLabels = language === "vi"
-    ? ["", "Phế", "Đồng", "Thép", "Lõi", "Prism"]
-    : ["", "Scrap", "Copper", "Steel", "Core", "Prism"];
+        help: "Use arrow keys, direction buttons, or swipe. Matching number tiles merge together.",
+        moved: "Tiles moved.",
+        blocked: "That move is blocked.",
+        merged: (count: number) => `Merged ${count} pairs.`,
+      }, [language]);
 
   const publish = useCallback((next: GameState) => {
     stateRef.current = next;
     setGame(next);
-    window.localStorage.setItem(SHIFT_KEY, serializeShift(next));
-    if (next.status !== "playing") {
-      setHighScore((current) => {
-        const best = Math.max(current, next.score);
-        window.localStorage.setItem(HIGH_SCORE_KEY, String(best));
-        return best;
-      });
-    }
+    window.localStorage.setItem(GAME_KEY, serializeGame(next));
+    setHighScore((current) => {
+      const best = Math.max(current, next.score);
+      window.localStorage.setItem(HIGH_SCORE_KEY, String(best));
+      return best;
+    });
   }, []);
 
   useEffect(() => {
     const audio = new MergeFoundryAudio();
     audioRef.current = audio;
-    const systemReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const nextMuted = readStoredBoolean(
-      window.localStorage.getItem(MUTED_KEY),
-      false,
-    );
+    const systemReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nextMuted = readStoredBoolean(window.localStorage.getItem(MUTED_KEY), false);
     const nextReduced = readStoredBoolean(
       window.localStorage.getItem(REDUCED_MOTION_KEY),
       systemReduced,
     );
-    const saved = parseSavedShift(window.localStorage.getItem(SHIFT_KEY));
+    const saved = parseSavedGame(window.localStorage.getItem(GAME_KEY));
     const hydrate = window.setTimeout(() => {
       audio.setMuted(nextMuted);
       setMuted(nextMuted);
@@ -159,9 +137,7 @@ export default function MergeFoundryGame() {
     }, 0);
     return () => {
       window.clearTimeout(hydrate);
-      if (unlockTimerRef.current !== null) {
-        window.clearTimeout(unlockTimerRef.current);
-      }
+      if (unlockTimerRef.current !== null) window.clearTimeout(unlockTimerRef.current);
       audio.dispose();
       audioRef.current = null;
     };
@@ -173,10 +149,7 @@ export default function MergeFoundryGame() {
   }, [muted]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      REDUCED_MOTION_KEY,
-      String(reducedMotion),
-    );
+    window.localStorage.setItem(REDUCED_MOTION_KEY, String(reducedMotion));
   }, [reducedMotion]);
 
   useEffect(() => {
@@ -184,15 +157,12 @@ export default function MergeFoundryGame() {
       if (document.hidden) setPaused(true);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   const lockBriefly = useCallback((duration: number) => {
     lockedRef.current = true;
-    if (unlockTimerRef.current !== null) {
-      window.clearTimeout(unlockTimerRef.current);
-    }
+    if (unlockTimerRef.current !== null) window.clearTimeout(unlockTimerRef.current);
     unlockTimerRef.current = window.setTimeout(() => {
       lockedRef.current = false;
       setMergedIndexes([]);
@@ -208,32 +178,22 @@ export default function MergeFoundryGame() {
     if (!transition.changed) {
       lockedRef.current = false;
       audioRef.current?.playInvalid();
-      setAnnouncement(
-        language === "vi" ? "Không thể trượt theo hướng đó." : "That move is blocked.",
-      );
+      setAnnouncement(copy.blocked);
       return;
     }
     audioRef.current?.playSlide();
-    transition.merges.forEach((merge) =>
-      audioRef.current?.playMerge(merge.tier),
-    );
+    transition.merges.forEach((merge) => audioRef.current?.playMerge(merge.value));
     setMergedIndexes(transition.merges.map((merge) => merge.to));
     setSpawnedIndex(transition.spawnedIndex);
     publish(transition.state);
     setAnnouncement(
-      transition.merges.length > 0
-        ? language === "vi"
-          ? `Đã hợp nhất ${transition.merges.length} vật liệu.`
-          : `Merged ${transition.merges.length} materials.`
-        : language === "vi"
-          ? "Đã trượt vật liệu."
-          : "Materials moved.",
+      transition.merges.length > 0 ? copy.merged(transition.merges.length) : copy.moved,
     );
-    if (transition.state.status === "lost") {
-      audioRef.current?.playOutcome(false);
+    if (transition.state.status !== "playing") {
+      audioRef.current?.playOutcome(transition.state.status === "won");
     }
     lockBriefly(reducedMotion ? 40 : 170);
-  }, [language, lockBriefly, paused, publish, reducedMotion]);
+  }, [copy, lockBriefly, paused, publish, reducedMotion]);
 
   useEffect(() => {
     const directions: Record<string, Direction> = {
@@ -252,27 +212,6 @@ export default function MergeFoundryGame() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [attemptSlide]);
 
-  const handleDelivery = useCallback(async (orderId: string) => {
-    if (lockedRef.current || paused) return;
-    lockedRef.current = true;
-    await audioRef.current?.unlock();
-    const result = deliverOrder(stateRef.current, orderId);
-    if (!result.delivered) {
-      lockedRef.current = false;
-      audioRef.current?.playInvalid();
-      return;
-    }
-    publish(result.state);
-    audioRef.current?.playDelivery(result.state.combo);
-    setAnnouncement(
-      language === "vi" ? "Đơn chế tạo đã được giao." : "Crafting order delivered.",
-    );
-    if (result.state.status === "won") {
-      audioRef.current?.playOutcome(true);
-    }
-    lockBriefly(reducedMotion ? 40 : 170);
-  }, [language, lockBriefly, paused, publish, reducedMotion]);
-
   const handleUndo = useCallback(() => {
     if (lockedRef.current || paused) return;
     const next = undo(stateRef.current);
@@ -287,7 +226,7 @@ export default function MergeFoundryGame() {
     setMergedIndexes([]);
     setSpawnedIndex(null);
     publish(next);
-    setAnnouncement(language === "vi" ? "Ca mới đã bắt đầu." : "New shift started.");
+    setAnnouncement(language === "vi" ? "Ván mới đã bắt đầu." : "New game started.");
   }, [language, publish]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -316,7 +255,11 @@ export default function MergeFoundryGame() {
   ];
 
   return (
-    <main className={styles.gamePage} data-status={game.status} data-reduced-motion={reducedMotion}>
+    <main
+      className={styles.gamePage}
+      data-status={game.status}
+      data-reduced-motion={reducedMotion}
+    >
       <header className={styles.header}>
         <div>
           <Link href="/playground" className={styles.back}>
@@ -344,144 +287,98 @@ export default function MergeFoundryGame() {
         </div>
       </header>
 
-      <section className={styles.layout}>
-        <div className={styles.playColumn}>
-          <div className={styles.hud}>
-            <div><span>{copy.score}</span><strong>{game.score.toLocaleString()}</strong></div>
-            <div><span>{copy.combo}</span><strong>{game.combo}x</strong></div>
-            <div><span>{copy.orders}</span><strong>{game.completedOrders}/8</strong></div>
-            <div><span>{copy.moves}</span><strong>{game.moveCount}</strong></div>
-          </div>
-
-          <section className={styles.boardCard} aria-label={copy.board}>
-            <div className={styles.boardTop}>
-              <span>{copy.board} · 5×5</span>
-              <span>{copy.best}: {Math.max(highScore, game.score).toLocaleString()}</span>
-            </div>
-            <div
-              className={styles.board}
-              role="grid"
-              aria-label={copy.board}
-              onPointerDown={onPointerDown}
-              onPointerUp={onPointerUp}
-            >
-              {game.board.map((tier, index) => (
-                <div className={styles.cell} role="gridcell" key={index}>
-                  {tier !== null && (
-                    <div
-                      className={styles.tile}
-                      data-tier={tier}
-                      data-material={tierKeys[tier]}
-                      data-merged={mergedIndexes.includes(index)}
-                      data-spawned={spawnedIndex === index}
-                    >
-                      <span>{tierLabels[tier]}</span>
-                      <b>{tier}</b>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {(paused || game.status !== "playing") && (
-                <div className={styles.overlay}>
-                  <h2>
-                    {paused ? copy.paused : game.status === "won" ? copy.won : copy.lost}
-                  </h2>
-                  <p>{copy.score}: {game.score.toLocaleString()}</p>
-                  {paused ? (
-                    <button type="button" onClick={() => setPaused(false)}>
-                      <Play size={17} /> {copy.resume}
-                    </button>
-                  ) : (
-                    <button type="button" onClick={restart}>
-                      <RotateCcw size={17} /> {copy.restart}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.boardActions}>
-              <button
-                type="button"
-                onClick={handleUndo}
-                disabled={paused || !game.undoAvailable || !game.undoSnapshot}
-              >
-                <Undo2 size={16} />
-                {game.undoAvailable ? copy.undo : copy.used}
-              </button>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={reducedMotion}
-                  onChange={(event) => setReducedMotion(event.target.checked)}
-                />
-                {copy.motion}
-              </label>
-            </div>
-
-            <div className={styles.directionPad} aria-label="Move controls">
-              {directionButtons.map(({ direction, icon: Icon, label }) => (
-                <button
-                  type="button"
-                  key={direction}
-                  onClick={() => void attemptSlide(direction)}
-                  aria-label={`Move ${label}`}
-                >
-                  <Icon size={18} />
-                </button>
-              ))}
-            </div>
-          </section>
+      <section className={styles.classicLayout}>
+        <div className={styles.hud}>
+          <div><span>{copy.score}</span><strong>{game.score.toLocaleString()}</strong></div>
+          <div><span>{copy.best}</span><strong>{Math.max(highScore, game.score).toLocaleString()}</strong></div>
+          <div><span>{copy.moves}</span><strong>{game.moveCount}</strong></div>
+          <div><span>{copy.target}</span><strong>{TARGET_VALUE}</strong></div>
         </div>
 
-        <aside className={styles.orderPanel}>
-          <div className={styles.orderHead}>
-            <div>
-              <span>{copy.queue}</span>
-              <strong>{game.completedOrders}/8</strong>
-            </div>
-            <div className={styles.progress}>
-              <i style={{ width: `${(game.completedOrders / 8) * 100}%` }} />
-            </div>
+        <section className={styles.boardCard} aria-label={copy.board}>
+          <div className={styles.boardTop}>
+            <span>{copy.board} · 4×4</span>
+            <button type="button" onClick={restart} className={styles.newGameButton}>
+              <RotateCcw size={14} /> {copy.restart}
+            </button>
           </div>
-
-          <div className={styles.orders}>
-            {game.orders.map((order, index) => {
-              const ready = canDeliver(game, order.id);
-              return (
-                <article className={styles.order} data-ready={ready} key={order.id}>
-                  <span>{index === 0 ? "ACTIVE" : `QUEUE ${index + 1}`}</span>
-                  <div>
-                    <strong>{order.quantity}× {tierLabels[order.tier]}</strong>
-                    <small>Tier {order.tier}</small>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!ready}
-                    onClick={() => void handleDelivery(order.id)}
+          <div
+            className={styles.board}
+            role="grid"
+            aria-label={copy.board}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+          >
+            {game.board.map((value, index) => (
+              <div className={styles.cell} role="gridcell" key={index}>
+                {value !== null && (
+                  <div
+                    className={styles.tile}
+                    data-value={value}
+                    data-merged={mergedIndexes.includes(index)}
+                    data-spawned={spawnedIndex === index}
+                    aria-label={String(value)}
                   >
-                    {ready && <Check size={15} />} {ready ? copy.deliver : copy.notReady}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-
-          <div className={styles.legend}>
-            {([1, 2, 3, 4, 5] as MaterialTier[]).map((tier) => (
-              <div key={tier}>
-                <i data-tier={tier} />
-                <span>{tierLabels[tier]}</span>
+                    <span>{value}</span>
+                  </div>
+                )}
               </div>
             ))}
+
+            {(paused || game.status !== "playing") && (
+              <div className={styles.overlay}>
+                <h2>{paused ? copy.paused : game.status === "won" ? copy.won : copy.lost}</h2>
+                <p>{copy.score}: {game.score.toLocaleString()}</p>
+                {paused ? (
+                  <button type="button" onClick={() => setPaused(false)}>
+                    <Play size={17} /> {copy.resume}
+                  </button>
+                ) : (
+                  <button type="button" onClick={restart}>
+                    <RotateCcw size={17} /> {copy.restart}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        </aside>
+
+          <div className={styles.boardActions}>
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={paused || !game.undoAvailable || !game.undoSnapshot}
+            >
+              <Undo2 size={16} />
+              {game.undoAvailable ? copy.undo : copy.used}
+            </button>
+            <label>
+              <input
+                type="checkbox"
+                checked={reducedMotion}
+                onChange={(event) => setReducedMotion(event.target.checked)}
+              />
+              {copy.motion}
+            </label>
+          </div>
+
+          <div className={styles.directionPad} aria-label="Move controls">
+            {directionButtons.map(({ direction, icon: Icon, label }) => (
+              <button
+                type="button"
+                key={direction}
+                onClick={() => void attemptSlide(direction)}
+                aria-label={`Move ${label}`}
+              >
+                <Icon size={18} />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <p className={styles.helpText}>{copy.help}</p>
       </section>
 
-      <output className={styles.srStatus} aria-live="polite">
-        {announcement}
-      </output>
+      <output className={styles.srStatus} aria-live="polite">{announcement}</output>
     </main>
   );
 }

@@ -98,10 +98,10 @@ export default function PlaygroundPage() {
       categories: ["Puzzle", "Strategy", "Casual"],
       categoryLabel: "PUZZLE · STRATEGY · CASUAL",
       description: language === "vi"
-        ? "Trượt và hợp nhất vật liệu, tính toán khoảng trống rồi hoàn thành tám đơn chế tạo."
-        : "Slide and merge materials, manage your space, and complete eight crafting orders.",
+        ? "Trượt các ô số, ghép cặp giống nhau và chinh phục ô 2048."
+        : "Slide matching number tiles and build your way to the 2048 tile.",
       features: [
-        { icon: "time", label: "5–10 min shifts" },
+        { icon: "time", label: "5–10 min runs" },
         { icon: "brain", label: "Turn-based" },
         { icon: "grid", label: "Touch + Keyboard" },
       ],
@@ -176,7 +176,7 @@ export default function PlaygroundPage() {
                 ) : (
                   <div className={styles.foundryPreview}>
                     {[1, 0, 2, 0, 1, 3, 3, 0, 0, 2, 4, 0, 1, 0, 5, 0].map((tier, index) => (
-                      <i data-tier={tier || undefined} key={index} />
+                      <i data-tier={tier || undefined} key={index}>{tier ? 2 ** tier : null}</i>
                     ))}
                     <Move className={styles.mergeMark} size={23} />
                   </div>
