@@ -128,3 +128,19 @@ test("merge foundry audio supports gameplay cues and cleanup", () => {
   assert.match(source, /setMuted\(muted: boolean\)/);
   assert.match(source, /dispose\(\)/);
 });
+test("merge foundry route exposes board, orders, controls, and persistence", () => {
+  const page = readFileSync("app/playground/merge-foundry/page.tsx", "utf8");
+  const game = readFileSync(
+    "app/playground/merge-foundry/merge-foundry-game.tsx",
+    "utf8",
+  );
+  assert.match(page, /MergeFoundryGame/);
+  assert.match(page, /metadata/);
+  assert.match(game, /role="grid"/);
+  assert.match(game, /ArrowUp|ArrowDown|ArrowLeft|ArrowRight/);
+  assert.match(game, /onPointerDown/);
+  assert.match(game, /localStorage/);
+  assert.match(game, /aria-live="polite"/);
+  assert.match(game, /deliverOrder/);
+  assert.match(game, /undo/);
+});
