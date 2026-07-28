@@ -56,3 +56,17 @@ test("audio controller supports hit feedback, mute, and disposal", () => {
   assert.match(source, /dispose\(\)/);
   assert.match(source, /AudioContext/);
 });
+test("game route exposes canvas, controls, and status overlays", () => {
+  const page = readFileSync("app/playground/neon-pulse/page.tsx", "utf8");
+  const game = readFileSync(
+    "app/playground/neon-pulse/neon-pulse-game.tsx",
+    "utf8",
+  );
+  assert.match(page, /NeonPulseGame/);
+  assert.match(page, /metadata/);
+  assert.match(game, /<canvas/);
+  assert.match(game, /requestAnimationFrame/);
+  assert.match(game, /visibilitychange/);
+  assert.match(game, /localStorage/);
+  assert.match(game, /Space/);
+});
