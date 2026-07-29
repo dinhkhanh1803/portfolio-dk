@@ -604,4 +604,9 @@
 .siegeEnemyTwo { top: 74px; left: 145px; animation-delay: -.8s; }
 .siegePreview b { position: absolute; top: 11px; left: 12px; color: rgba(226,255,253,.62); font: 900 9px var(--font-mono), monospace; letter-spacing: .08em; }
 @keyframes siegeMarch { to { transform: translate(78px,-18px); } }
-@media (prefers-reduced-motion: reduce) { .siegeEnemyOne, .siegeEnemyTwo { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .siegeEnemyOne, .siegeEnemyTwo { animation: none; } }.serpentVisual{background:radial-gradient(circle at 68% 30%,rgba(255,202,89,.16),transparent 10%),linear-gradient(rgba(59,219,206,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(59,219,206,.06) 1px,transparent 1px),#06171c;background-size:auto,25px 25px,25px 25px,auto}
+.serpentPreview{width:min(76%,280px);aspect-ratio:3/2;position:relative;z-index:1;border:1px solid rgba(99,231,226,.2);border-radius:16px;background:rgba(2,12,17,.7);box-shadow:0 20px 45px rgba(0,0,0,.32)}
+.serpentPreview i{position:absolute;width:27px;height:27px;border-radius:9px;background:#25d8c6;box-shadow:0 0 13px rgba(37,216,198,.48)}
+.serpentTailOne{left:45px;bottom:38px}.serpentTailTwo{left:72px;bottom:38px}.serpentTailThree{left:99px;bottom:38px}.serpentPreview .serpentHead{left:126px;bottom:38px;background:#aafff4;color:#08383a;font-style:normal;font-weight:900;text-align:center;line-height:20px}
+.serpentPreview .serpentCore{right:42px;top:42px;width:18px;height:18px;border-radius:50%;background:#ffca59;box-shadow:0 0 18px #ffca59}
+.serpentPreview .serpentObstacle{left:82px;top:35px;width:78px;height:18px;background:#29434b;box-shadow:none}

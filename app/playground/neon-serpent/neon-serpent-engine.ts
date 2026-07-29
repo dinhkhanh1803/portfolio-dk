@@ -193,7 +193,7 @@ const maybeDropPickup = (state: SerpentRun): SerpentRun => {
     pickups: [...state.pickups, { id: state.nextId, type, cell: spawned.cell, expiresMs: 9000 }],
   };
 };
-const usePortal = (state: SerpentRun, head: Cell) => {
+const portalDestination = (state: SerpentRun, head: Cell) => {
   const portals = currentDefinition(state).portals;
   if (!portals || state.portalCooldownMs > 0) return head;
   if (sameCell(head, portals[0])) return { ...portals[1] };
@@ -213,7 +213,7 @@ const moveHunter = (state: SerpentRun) => {
 const moveOneTick = (state: SerpentRun): SerpentRun => {
   const direction = state.queuedDirection;
   const rawHead = nextHead(state.snake[0], direction);
-  const head = usePortal(state, rawHead);
+  const head = portalDestination(state, rawHead);
   const phaseSafe = state.effects.phase > 0;
   const selfHit = state.snake.slice(0, -1).some((cell) => sameCell(cell, head));
   if (state.invulnerableMs <= 0 && !phaseSafe && (isDangerousCell(state, head) || selfHit)) {

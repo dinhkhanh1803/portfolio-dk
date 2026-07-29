@@ -39,7 +39,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege";
+  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent";
 };
 
 const featureIcons = {
@@ -172,6 +172,22 @@ export default function PlaygroundPage() {
       ],
       visual: "siege",
     },
+    {
+      slug: "neon-serpent",
+      href: "/playground/neon-serpent",
+      title: "Neon Serpent",
+      categories: ["Arcade", "Skill", "Casual", "Endless"],
+      categoryLabel: "ARCADE · SNAKE ROGUELITE · CAMPAIGN",
+      description: language === "vi"
+        ? "Lướt qua 8 màn neon, nhặt 5 kỹ năng, hạ 2 boss và mở khóa chế độ Endless."
+        : "Slither through eight neon stages, collect five skills, defeat two bosses, and unlock Endless.",
+      features: [
+        { icon: "zap", label: "8-stage campaign" },
+        { icon: "brain", label: "5 roguelite skills" },
+        { icon: "controls", label: "Swipe + Keyboard" },
+      ],
+      visual: "serpent",
+    },
   ];
 
   const normalized = query.trim().toLowerCase();
@@ -232,7 +248,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -267,7 +283,7 @@ export default function PlaygroundPage() {
                     <i className={styles.breakerBall} />
                     <i className={styles.breakerPaddle} />
                   </div>
-                ) : (
+                ) : game.visual === "siege" ? (
                   <div className={styles.siegePreview}>
                     <i className={styles.siegeRoute} />
                     <i className={styles.siegeTowerOne}>P</i>
@@ -276,6 +292,15 @@ export default function PlaygroundPage() {
                     <i className={styles.siegeEnemyOne} />
                     <i className={styles.siegeEnemyTwo} />
                     <b>WAVE 08</b>
+                  </div>
+                ) : (
+                  <div className={styles.serpentPreview}>
+                    <i className={styles.serpentObstacle} />
+                    <i className={styles.serpentCore} />
+                    <i className={styles.serpentTailOne} />
+                    <i className={styles.serpentTailTwo} />
+                    <i className={styles.serpentTailThree} />
+                    <i className={styles.serpentHead}>••</i>
                   </div>
                 )}
               </div>
