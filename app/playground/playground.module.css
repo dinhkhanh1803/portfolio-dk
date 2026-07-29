@@ -540,3 +540,28 @@
   }
 }
 
+
+.pongVisual {
+  background:
+    linear-gradient(rgba(72, 221, 218, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(72, 221, 218, .045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(47, 200, 200, .17), transparent 60%),
+    #06151c;
+  background-size: 27px 27px, 27px 27px, auto, auto;
+}
+
+.pongVisual::after { width: 82%; aspect-ratio: 16 / 9; border-radius: 17px; }
+.pongPreview { width: min(76%, 280px); aspect-ratio: 16 / 9; position: relative; z-index: 1; overflow: hidden; border: 1px solid rgba(99, 231, 226, .2); border-radius: 16px; background: rgba(2, 12, 17, .72); box-shadow: 0 20px 45px rgba(0,0,0,.3), inset 0 0 35px rgba(47,200,200,.08); }
+.pongNet { width: 2px; position: absolute; inset-block: 12px; left: 50%; background: repeating-linear-gradient(to bottom, rgba(233,255,255,.42) 0 7px, transparent 7px 14px); }
+.pongPaddleLeft, .pongPaddleRight { width: 7px; height: 44px; position: absolute; top: 55px; border-radius: 99px; }
+.pongPaddleLeft { left: 20px; background: #37d2d0; box-shadow: 0 0 16px #37d2d0; }
+.pongPaddleRight { right: 20px; background: #f27662; box-shadow: 0 0 16px #f27662; }
+.pongBall { width: 12px; height: 12px; position: absolute; top: 43px; left: 43%; border-radius: 50%; background: #f4ffff; box-shadow: 0 0 16px #7ff5f0; animation: pongBallMove 1.8s ease-in-out infinite alternate; }
+.pongPreview b, .pongPreview strong { position: absolute; top: 12px; color: rgba(239,255,255,.64); font: 900 17px var(--font-mono), monospace; }
+.pongPreview b { right: calc(50% + 13px); }
+.pongPreview strong { left: calc(50% + 13px); }
+@keyframes pongBallMove { to { transform: translate(72px, 48px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pongBall { animation: none; }
+}

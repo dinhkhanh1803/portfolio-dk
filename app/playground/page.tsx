@@ -25,6 +25,7 @@ const categories = [
   "Puzzle",
   "Strategy",
   "Casual",
+  "Multiplayer",
 ] as const;
 
 type Category = (typeof categories)[number];
@@ -38,7 +39,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper";
+  visual: "pulse" | "foundry" | "hopper" | "pong";
 };
 
 const featureIcons = {
@@ -123,6 +124,22 @@ export default function PlaygroundPage() {
       ],
       visual: "hopper",
     },
+    {
+      slug: "pong",
+      href: "/playground/pong",
+      title: "Neon Classic Pong",
+      categories: ["Arcade", "Reaction", "Skill", "Multiplayer"],
+      categoryLabel: "ARCADE · SKILL · 1–2 PLAYERS",
+      description: language === "vi"
+        ? "Pong neon nguyên bản: đấu AI ba cấp độ hoặc so tài hai người ngay trên một thiết bị."
+        : "Pure neon Pong against three AI levels or a friend sharing the same device.",
+      features: [
+        { icon: "controls", label: "1P + Local 2P" },
+        { icon: "audio", label: "Web Audio" },
+        { icon: "zap", label: "First to 5 / 7 / 11" },
+      ],
+      visual: "pong",
+    },
   ];
 
   const normalized = query.trim().toLowerCase();
@@ -183,7 +200,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -196,11 +213,19 @@ export default function PlaygroundPage() {
                     ))}
                     <Move className={styles.mergeMark} size={23} />
                   </div>
-                ) : (
+                ) : game.visual === "hopper" ? (
                   <div className={styles.hopperPreview}>
                     <i className={styles.previewPipeTop} />
                     <span className={styles.previewBird}>↗</span>
                     <i className={styles.previewPipeBottom} />
+                  </div>
+                ) : (
+                  <div className={styles.pongPreview}>
+                    <i className={styles.pongNet} />
+                    <i className={styles.pongPaddleLeft} />
+                    <i className={styles.pongBall} />
+                    <i className={styles.pongPaddleRight} />
+                    <b>3</b><strong>2</strong>
                   </div>
                 )}
               </div>
