@@ -39,7 +39,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker";
+  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege";
 };
 
 const featureIcons = {
@@ -155,7 +155,24 @@ export default function PlaygroundPage() {
         { icon: "controls", label: "Touch + Keyboard" },
       ],
       visual: "breaker",
-    },  ];
+    },
+    {
+      slug: "neon-siege",
+      href: "/playground/neon-siege",
+      title: "Neon Siege",
+      categories: ["Strategy", "Skill", "Casual", "Endless"],
+      categoryLabel: "STRATEGY · TOWER DEFENSE · CAMPAIGN",
+      description: language === "vi"
+        ? "Xây 4 loại trụ, kích hoạt kỹ năng chiến đấu và bảo vệ lõi qua chiến dịch 12 wave rồi mở khóa Endless."
+        : "Build four tower types, deploy active skills, and defend the core through a twelve-wave campaign, then unlock Endless.",
+      features: [
+        { icon: "brain", label: "12-wave campaign" },
+        { icon: "zap", label: "3 active skills" },
+        { icon: "audio", label: "Web Audio" },
+      ],
+      visual: "siege",
+    },
+  ];
 
   const normalized = query.trim().toLowerCase();
   const visibleGames = games.filter((game) => {
@@ -215,7 +232,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -242,13 +259,23 @@ export default function PlaygroundPage() {
                     <i className={styles.pongPaddleRight} />
                     <b>3</b><strong>2</strong>
                   </div>
-                ) : (
+                ) : game.visual === "breaker" ? (
                   <div className={styles.breakerPreview}>
                     <div className={styles.breakerBricks}>
                       {Array.from({ length: 20 }, (_, index) => <i key={index} data-tone={index % 3} />)}
                     </div>
                     <i className={styles.breakerBall} />
                     <i className={styles.breakerPaddle} />
+                  </div>
+                ) : (
+                  <div className={styles.siegePreview}>
+                    <i className={styles.siegeRoute} />
+                    <i className={styles.siegeTowerOne}>P</i>
+                    <i className={styles.siegeTowerTwo}>T</i>
+                    <i className={styles.siegeTowerThree}>R</i>
+                    <i className={styles.siegeEnemyOne} />
+                    <i className={styles.siegeEnemyTwo} />
+                    <b>WAVE 08</b>
                   </div>
                 )}
               </div>

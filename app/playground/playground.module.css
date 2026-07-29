@@ -588,3 +588,20 @@
 .breakerBall { width: 11px; height: 11px; position: absolute; left: 42%; bottom: 51px; border-radius: 50%; background: #efffff; box-shadow: 0 0 14px #8afff8; animation: breakerBounce 1.55s ease-in-out infinite alternate; }
 @keyframes breakerBounce { to { transform: translate(48px, -95px); } }
 @media (prefers-reduced-motion: reduce) { .breakerBall { animation: none; } }
+.siegeVisual {
+  background: linear-gradient(rgba(72,221,218,.04) 1px, transparent 1px), linear-gradient(90deg,rgba(72,221,218,.04) 1px,transparent 1px), radial-gradient(circle at 58% 48%,rgba(196,119,255,.15),transparent 58%), #06151c;
+  background-size: 25px 25px, 25px 25px, auto, auto;
+}
+.siegeVisual::after { width: 82%; aspect-ratio: 3 / 2; border-radius: 18px; }
+.siegePreview { width: min(76%,280px); aspect-ratio: 3 / 2; position: relative; z-index: 1; overflow: hidden; border: 1px solid rgba(99,231,226,.2); border-radius: 16px; background: rgba(2,12,17,.76); box-shadow: 0 20px 45px rgba(0,0,0,.32), inset 0 0 35px rgba(47,200,200,.08); }
+.siegeRoute { width: 115%; height: 35px; position: absolute; top: 52%; left: -10%; transform: rotate(-13deg); border-block: 1px solid rgba(89,216,212,.22); background: #162c35; box-shadow: 0 0 18px rgba(52,184,183,.12); }
+.siegeTowerOne, .siegeTowerTwo, .siegeTowerThree { width: 34px; height: 34px; position: absolute; display: grid; place-items: center; border-radius: 50%; color: #06151c; font: 900 11px var(--font-mono), monospace; }
+.siegeTowerOne { top: 28px; left: 52px; background: #45f0ff; box-shadow: 0 0 17px #45f0ff; }
+.siegeTowerTwo { right: 64px; bottom: 23px; background: #c477ff; box-shadow: 0 0 17px #c477ff; }
+.siegeTowerThree { top: 24px; right: 24px; background: #ffca5c; box-shadow: 0 0 17px #ffca5c; }
+.siegeEnemyOne, .siegeEnemyTwo { width: 16px; height: 16px; position: absolute; z-index: 2; border-radius: 50%; background: #ff667e; box-shadow: 0 0 13px #ff667e; animation: siegeMarch 2.2s linear infinite; }
+.siegeEnemyOne { top: 93px; left: 95px; }
+.siegeEnemyTwo { top: 74px; left: 145px; animation-delay: -.8s; }
+.siegePreview b { position: absolute; top: 11px; left: 12px; color: rgba(226,255,253,.62); font: 900 9px var(--font-mono), monospace; letter-spacing: .08em; }
+@keyframes siegeMarch { to { transform: translate(78px,-18px); } }
+@media (prefers-reduced-motion: reduce) { .siegeEnemyOne, .siegeEnemyTwo { animation: none; } }
