@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, RefreshCw, Volume2, VolumeX, Zap } from "lucide-react";
+import { Pause, Play, RefreshCw, Volume2, VolumeX, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../language-provider";
 import { GRID, SKILLS, getStage, type Difficulty } from "./neon-serpent-data";
@@ -221,12 +221,6 @@ export default function NeonSerpentGame() {
               <button type="button" key={`stage-${index + 1}`} onClick={() => reset(index + 1)}>S{index + 1}</button>
             ))}
             <button type="button" disabled={!progress.endlessUnlocked} onClick={() => publish(startEndless(runRef.current, progress.endlessUnlocked))}>Endless</button>
-          </div>
-          <div className={styles.dpad} aria-label="Directional controls">
-            <button type="button" onClick={() => input("up")}><ArrowUp /></button><span />
-            <button type="button" onClick={() => input("left")}><ArrowLeft /></button>
-            <button type="button" onClick={() => input("down")}><ArrowDown /></button>
-            <button type="button" onClick={() => input("right")}><ArrowRight /></button>
           </div>
         </div>
         <p className={styles.status} aria-live="polite">{run.event?.label ?? `${getStage(run.stage).name} · ${run.phase}`}</p>
