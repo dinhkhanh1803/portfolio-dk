@@ -8,6 +8,7 @@ import {
   type MatchPhase,
   type Orientation,
   type ShipId,
+  type ShotResult,
 } from "./neon-fleet-data.ts";
 
 export type FleetMatch = {
@@ -132,4 +133,101 @@ export const autoPlaceFleet = (match: FleetMatch): FleetMatch => {
   }
 
   return { ...match, player, seed };
+};
+
+export const autoPlaceEnemy = (match: FleetMatch): FleetMatch => {
+  if (match.phase !== "setup") return match;
+
+  const mirrored = autoPlaceFleet({ ...match, player: match.enemy });
+  return { ...mirrored, player: match.player, enemy: mirrored.player };
+};
+
+const hasCompleteValidFleet = (board: BoardState) => {
+  if (board.ships.length !== FLEET.length) return false;
+
+  const occupied = new Set<string>();
+  for (const definition of FLEET) {
+    const ships = board.ships.filter((ship) => ship.id === definition.id);
+    if (ships.length !== 1) return false;
+
+    const [ship] = ships;
+    if (
+      ship.name !== definition.name
+      || ship.length !== definition.length
+      || ship.hits.length !== 0
+      || ship.cells.length !== definition.length
+    ) return false;
+
+    const expectedCells = cellsFor(ship.cells[0], definition.length, ship.orientation);
+    if (!ship.cells.every((cell, index) => isInBounds(cell) && cellKey(cell) === cellKey(expectedCells[index]))) return false;
+
+    for (const cell of ship.cells) {
+      const key = cellKey(cell);
+      if (occupied.has(key)) return false;
+      occupied.add(key);
+    }
+  }
+
+  return occupied.size === FLEET.reduce((total, ship) => total + ship.length, 0);
+};
+
+export const startBattle = (match: FleetMatch): FleetMatch =>
+  match.phase === "setup" && hasCompleteValidFleet(match.player) && hasCompleteValidFleet(match.enemy)
+    ? { ...match, phase: "playerTurn", event: "Your turn" }
+    : match;
+
+const allSunk = (board: BoardState) =>
+  board.ships.length === FLEET.length
+  && FLEET.every((definition) => {
+    const ships = board.ships.filter((ship) => ship.id === definition.id);
+    return ships.length === 1 && ships[0].length === definition.length && ships[0].hits.length === ships[0].length;
+  });
+
+const fireAtBoard = (board: BoardState, cell: Cell) => {
+  if (!isInBounds(cell)) return null;
+
+  const key = cellKey(cell);
+  if (Object.hasOwn(board.shots, key)) return null;
+
+  const ship = board.ships.find((candidate) => candidate.cells.some((part) => cellKey(part) === key));
+  const ships = ship
+    ? board.ships.map((candidate) => candidate.id === ship.id
+      ? { ...candidate, hits: candidate.hits.includes(key) ? candidate.hits : [...candidate.hits, key] }
+      : candidate)
+    : board.ships;
+  const updatedShip = ships.find((candidate) => candidate.id === ship?.id);
+  const result: ShotResult = !ship ? "miss" : updatedShip?.hits.length === updatedShip?.length ? "sunk" : "hit";
+
+  return { board: { ships, shots: { ...board.shots, [key]: result } }, result };
+};
+
+export const firePlayerShot = (match: FleetMatch, cell: Cell): FleetMatch => {
+  if (match.phase !== "playerTurn") return match;
+
+  const resolved = fireAtBoard(match.enemy, cell);
+  if (!resolved) return match;
+
+  const victory = allSunk(resolved.board);
+  return {
+    ...match,
+    enemy: resolved.board,
+    turn: match.turn + 1,
+    phase: victory ? "victory" : "aiTurn",
+    event: victory ? "Enemy fleet destroyed" : resolved.result.toUpperCase(),
+  };
+};
+
+export const fireAiShot = (match: FleetMatch, cell: Cell): FleetMatch => {
+  if (match.phase !== "aiTurn") return match;
+
+  const resolved = fireAtBoard(match.player, cell);
+  if (!resolved) return match;
+
+  const defeat = allSunk(resolved.board);
+  return {
+    ...match,
+    player: resolved.board,
+    phase: defeat ? "defeat" : "playerTurn",
+    event: defeat ? "Your fleet was destroyed" : `AI ${resolved.result}`,
+  };
 };
