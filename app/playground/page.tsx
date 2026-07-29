@@ -39,7 +39,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper" | "pong";
+  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker";
 };
 
 const featureIcons = {
@@ -140,7 +140,22 @@ export default function PlaygroundPage() {
       ],
       visual: "pong",
     },
-  ];
+    {
+      slug: "neon-breaker",
+      href: "/playground/neon-breaker",
+      title: "Neon Breaker",
+      categories: ["Arcade", "Reaction", "Skill", "Casual"],
+      categoryLabel: "ARCADE · REACTION · SKILL · CASUAL",
+      description: language === "vi"
+        ? "Phá gạch qua 5 màn thủ công, giữ combo và bắt ba loại power-up neon."
+        : "Break through five handcrafted boards, build combos, and catch three neon power-ups.",
+      features: [
+        { icon: "zap", label: "5 levels" },
+        { icon: "audio", label: "Web Audio" },
+        { icon: "controls", label: "Touch + Keyboard" },
+      ],
+      visual: "breaker",
+    },  ];
 
   const normalized = query.trim().toLowerCase();
   const visibleGames = games.filter((game) => {
@@ -200,7 +215,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -219,13 +234,21 @@ export default function PlaygroundPage() {
                     <span className={styles.previewBird}>↗</span>
                     <i className={styles.previewPipeBottom} />
                   </div>
-                ) : (
+                ) : game.visual === "pong" ? (
                   <div className={styles.pongPreview}>
                     <i className={styles.pongNet} />
                     <i className={styles.pongPaddleLeft} />
                     <i className={styles.pongBall} />
                     <i className={styles.pongPaddleRight} />
                     <b>3</b><strong>2</strong>
+                  </div>
+                ) : (
+                  <div className={styles.breakerPreview}>
+                    <div className={styles.breakerBricks}>
+                      {Array.from({ length: 20 }, (_, index) => <i key={index} data-tone={index % 3} />)}
+                    </div>
+                    <i className={styles.breakerBall} />
+                    <i className={styles.breakerPaddle} />
                   </div>
                 )}
               </div>
