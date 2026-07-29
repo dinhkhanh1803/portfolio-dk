@@ -62,6 +62,12 @@ export class NeonBreakerAudio {
     this.tone(520, 0.16, 0.045, "triangle", 820);
     this.tone(780, 0.22, 0.04, "triangle", 1200, 0.12);
   }
+  playLaser() { this.tone(980, 0.09, 0.04, "sawtooth", 340); }
+  playShield() {
+    this.tone(360, 0.13, 0.038, "sine", 620);
+    this.tone(620, 0.16, 0.03, "sine", 840, 0.07);
+  }
+  playSticky() { this.tone(180, 0.12, 0.042, "square", 110); }
 
   dispose() {
     const context = this.context;

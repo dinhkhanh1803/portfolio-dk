@@ -14,6 +14,7 @@ import {
   createRun,
   damageBrick,
   evaluateProgress,
+  fireLaser,
   launchBall,
   pauseRun,
   powerUpForBrick,
@@ -31,8 +32,8 @@ const destroyAll = (state) => state.bricks.map((brick) =>
     ? brick
     : { ...brick, destroyed: true, hitsRemaining: 0 });
 
-test("defines five valid handcrafted levels", () => {
-  assert.equal(LEVELS.length, 5);
+test("defines ten valid handcrafted levels", () => {
+  assert.equal(LEVELS.length, 10);
   for (const level of LEVELS) {
     assert.ok(level.bricks.length >= 20);
     assert.ok(level.bricks.some((brick) => brick.kind !== "indestructible"));
@@ -54,7 +55,7 @@ test("creates a centered ready three-life run", () => {
 });
 
 test("validates an optional starting level", () => {
-  assert.equal(createRun(4).level, 4);
+  assert.equal(createRun(10).level, 10);
   assert.equal(createRun(99).level, 1);
 });
 
@@ -203,11 +204,11 @@ test("zero lives ends the run", () => {
   assert.equal(next.phase, "gameover");
 });
 
-test("clears levels one through five and ends in victory", () => {
+test("clears levels one through ten and ends in victory", () => {
   let state = createRun();
-  for (let level = 1; level <= 5; level += 1) {
+  for (let level = 1; level <= 10; level += 1) {
     state = evaluateProgress({ ...state, phase: "playing", bricks: destroyAll(state) });
-    if (level < 5) {
+    if (level < 10) {
       assert.equal(state.phase, "level-clear");
       const previousScore = state.score;
       state = startNextLevel(state);
@@ -218,18 +219,18 @@ test("clears levels one through five and ends in victory", () => {
   assert.equal(state.phase, "victory");
 });
 
-test("brick drops are deterministic and bounded", () => {
-  const outcomes = LEVELS[0].bricks.map((brick) =>
-    powerUpForBrick(brick.id, LEVELS[0].seed));
-  assert.deepEqual(
-    outcomes,
-    LEVELS[0].bricks.map((brick) => powerUpForBrick(brick.id, LEVELS[0].seed)),
-  );
+test("brick drops are deterministic and cover all six skill types", () => {
+  const outcomes = LEVELS.flatMap((level) => level.bricks.map((brick) =>
+    powerUpForBrick(brick.id, level.seed),
+  ));
   assert.ok(outcomes.some((value) => value === null));
   assert.ok(outcomes.every((value) =>
-    value === null || ["wide", "multiball", "slow"].includes(value)));
+    value === null || ["wide", "multiball", "slow", "laser", "shield", "sticky"].includes(value)));
+  assert.deepEqual(
+    [...new Set(outcomes.filter(Boolean))].sort(),
+    ["laser", "multiball", "shield", "slow", "sticky", "wide"],
+  );
 });
-
 test("wide, slow, and multiball power-ups remain bounded", () => {
   const base = launchBall(createRun());
   const wide = applyPowerUp(base, "wide");
@@ -268,11 +269,111 @@ test("slow refreshes without compounding and restores speed after seven seconds"
   assert.equal(expired.effects.slowRemainingMs, 0);
   assert.equal(expired.balls[0].speed, 800);
 });
+
+test("laser grants three bounded shots and destroys a lane brick", () => {
+  const base = launchBall(createRun());
+  const charged = applyPowerUp(base, "laser");
+  assert.equal(charged.skills.laserShots, 3);
+  assert.equal(applyPowerUp(charged, "laser").skills.laserShots, 3);
+  const target = charged.bricks.find((brick) => brick.kind === "standard");
+  const fired = fireLaser(charged, target.x + target.width / 2);
+  assert.equal(fired.skills.laserShots, 2);
+  assert.ok(fired.bricks.some((brick) => brick.destroyed));
+  assert.ok(fired.score > charged.score);
+});
+
+test("laser fully destroys reinforced bricks and preserves deterministic drops", () => {
+  const base = applyPowerUp(launchBall(createRun(4)), "laser");
+  const target = base.bricks.find((brick) =>
+    brick.kind === "reinforced" && powerUpForBrick(brick.id, base.levelSeed));
+  assert.ok(target);
+  const fired = fireLaser({
+    ...base,
+    bricks: base.bricks.map((brick) => brick.id === target.id
+      ? { ...brick, x: 100, width: 100 }
+      : { ...brick, x: brick.x + 300 }),
+  }, 150);
+  const destroyed = fired.bricks.find((brick) => brick.id === target.id);
+  assert.equal(destroyed.destroyed, true);
+  assert.equal(destroyed.hitsRemaining, 0);
+  assert.equal(fired.drops.at(-1)?.type, powerUpForBrick(target.id, base.levelSeed));
+});
+
+test("shield prevents exactly one final-ball loss", () => {
+  const shielded = applyPowerUp(launchBall(createRun()), "shield");
+  const recovered = step({
+    ...shielded,
+    balls: [{ ...shielded.balls[0], y: WORLD_HEIGHT + 50, vy: 600 }],
+  }, 16, NO_INPUT);
+  assert.equal(recovered.lives, 3);
+  assert.equal(recovered.phase, "ready");
+  assert.equal(recovered.readyReason, "shield");
+  assert.equal(recovered.skills.shieldCharges, 0);
+});
+
+test("sticky catches the next paddle contact and Space releases it", () => {
+  const armed = applyPowerUp(launchBall(createRun()), "sticky");
+  const caught = step({
+    ...armed,
+    balls: [{
+      ...armed.balls[0],
+      x: armed.paddle.x + armed.paddle.width / 2,
+      y: armed.paddle.y - BALL_RADIUS - 2,
+      vx: 0,
+      vy: 900,
+      speed: 900,
+      baseSpeed: 900,
+    }],
+  }, 16, NO_INPUT);
+  assert.equal(caught.phase, "ready");
+  assert.equal(caught.balls[0].attached, true);
+  assert.equal(caught.skills.stickyArmed, false);
+  assert.equal(launchBall(caught).phase, "playing");
+});
+
+test("sticky catches one multiball without freezing the remaining active balls", () => {
+  const armed = applyPowerUp(applyPowerUp(launchBall(createRun()), "multiball"), "sticky");
+  const contact = armed.balls[0];
+  const other = armed.balls[1];
+  const caught = step({
+    ...armed,
+    balls: [
+      {
+        ...contact,
+        x: armed.paddle.x + armed.paddle.width / 2,
+        y: armed.paddle.y - BALL_RADIUS - 2,
+        vx: 0,
+        vy: 900,
+        speed: 900,
+        baseSpeed: 900,
+      },
+      { ...other, x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, vx: 200, vy: -500 },
+    ],
+  }, 16, NO_INPUT);
+  assert.equal(caught.phase, "playing");
+  assert.equal(caught.balls.filter((ball) => ball.attached).length, 1);
+  assert.equal(caught.balls.filter((ball) => !ball.attached).length, 1);
+  const released = launchBall(caught);
+  assert.equal(released.phase, "playing");
+  assert.equal(released.balls.every((ball) => !ball.attached), true);
+});
+
+test("life loss with lives remaining returns to inline Space serve", () => {
+  const playing = launchBall(createRun());
+  const next = step({
+    ...playing,
+    balls: [{ ...playing.balls[0], y: WORLD_HEIGHT + 50, vy: 600 }],
+  }, 16, NO_INPUT);
+  assert.equal(next.phase, "ready");
+  assert.equal(next.readyReason, "life-lost");
+  assert.equal(next.balls[0].attached, true);
+});
+
 test("storage parsing accepts valid records and rejects invalid values", async () => {
   const storage = await import("../app/playground/neon-breaker/neon-breaker-storage.ts");
-  assert.deepEqual(storage.parseProgress('{"bestScore":12000,"unlockedLevel":4}'), {
+  assert.deepEqual(storage.parseProgress('{"bestScore":12000,"unlockedLevel":10}'), {
     bestScore: 12000,
-    unlockedLevel: 4,
+    unlockedLevel: 10,
   });
   assert.deepEqual(
     storage.parseProgress('{"bestScore":-1,"unlockedLevel":99}'),
@@ -296,6 +397,10 @@ test("route wires canvas, input, audio, theme, and accessibility", () => {
   assert.match(game, /aria-live="polite"/);
   assert.match(game, /aria-modal="true"/);
   assert.match(game, /data-theme/);
+  assert.match(game, /Space để phát bóng/);
+  assert.match(game, /fireLaser/);
+  assert.match(game, /readyReason/);
+  for (const skill of ["laser", "shield", "sticky"]) assert.match(game, new RegExp(skill));
   for (const cue of [
     "playPaddle",
     "playWall",
@@ -305,6 +410,9 @@ test("route wires canvas, input, audio, theme, and accessibility", () => {
     "playLevelClear",
     "playGameOver",
     "playVictory",
+    "playLaser",
+    "playShield",
+    "playSticky",
   ]) assert.match(audio, new RegExp(cue));
 });
 
@@ -313,6 +421,7 @@ test("styles are responsive, themed, and motion-aware", () => {
   assert.match(css, /aspect-ratio:\s*4\s*\/\s*5/);
   assert.match(css, /:global\(\[data-theme="dark"\]\)/);
   assert.match(css, /@media \(max-width: 760px\)/);
+  assert.match(css, /flex-wrap:\s*wrap/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /data-reduced-motion/);
 });
@@ -323,4 +432,5 @@ test("Playground promotes Neon Breaker as the fifth game", () => {
   assert.match(page, /Neon Breaker/);
   assert.match(page, /visual:\s*"breaker"/);
   assert.match(page, /Casual/);
+  assert.match(page, /10 levels/);
 });

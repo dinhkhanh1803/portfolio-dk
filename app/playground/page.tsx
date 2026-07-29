@@ -147,10 +147,10 @@ export default function PlaygroundPage() {
       categories: ["Arcade", "Reaction", "Skill", "Casual"],
       categoryLabel: "ARCADE · REACTION · SKILL · CASUAL",
       description: language === "vi"
-        ? "Phá gạch qua 5 màn thủ công, giữ combo và bắt ba loại power-up neon."
-        : "Break through five handcrafted boards, build combos, and catch three neon power-ups.",
+        ? "Phá gạch qua 10 màn thủ công, giữ combo và thu thập 6 loại skill neon."
+        : "Break through ten handcrafted boards, build combos, and collect six neon skills.",
       features: [
-        { icon: "zap", label: "5 levels" },
+        { icon: "zap", label: "10 levels" },
         { icon: "audio", label: "Web Audio" },
         { icon: "controls", label: "Touch + Keyboard" },
       ],

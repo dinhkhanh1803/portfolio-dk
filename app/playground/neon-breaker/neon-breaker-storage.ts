@@ -1,3 +1,5 @@
+import { LEVELS } from "./neon-breaker-levels.ts";
+
 export const PROGRESS_KEY = "neon-breaker:progress:v1";
 export const MUTED_KEY = "neon-breaker:muted";
 export const MOTION_KEY = "neon-breaker:reduced-motion";
@@ -20,7 +22,7 @@ export function parseProgress(raw: string | null): BreakerProgress {
       && value.bestScore >= 0
       && Number.isInteger(value.unlockedLevel)
       && value.unlockedLevel >= 1
-      && value.unlockedLevel <= 5
+      && value.unlockedLevel <= LEVELS.length
     ) {
       return { bestScore: value.bestScore, unlockedLevel: value.unlockedLevel };
     }

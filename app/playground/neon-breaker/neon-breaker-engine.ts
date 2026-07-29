@@ -31,7 +31,19 @@ export type BreakerPhase =
   | "gameover"
   | "victory";
 
-export type PowerUpType = "wide" | "multiball" | "slow";
+export type PowerUpType =
+  | "wide"
+  | "multiball"
+  | "slow"
+  | "laser"
+  | "shield"
+  | "sticky";
+export type ReadyReason = "initial" | "life-lost" | "shield" | "sticky" | "next-level";
+export type SkillState = {
+  laserShots: number;
+  shieldCharges: number;
+  stickyArmed: boolean;
+};
 export type BreakerEvent =
   | "launch"
   | "paddle"
@@ -39,6 +51,9 @@ export type BreakerEvent =
   | "brick"
   | "power-drop"
   | "power-collect"
+  | "laser"
+  | "shield"
+  | "sticky"
   | "life-lost"
   | "level-clear"
   | "gameover"
@@ -98,6 +113,7 @@ export type ActiveEffects = {
 
 export type BreakerState = {
   phase: BreakerPhase;
+  readyReason: ReadyReason;
   level: number;
   levelName: string;
   levelSeed: number;
@@ -109,6 +125,7 @@ export type BreakerState = {
   bricks: BrickState[];
   drops: PowerUpDrop[];
   effects: ActiveEffects;
+  skills: SkillState;
   elapsedMs: number;
   nextBallId: number;
   event: BreakerEvent;
@@ -175,6 +192,7 @@ export function createRun(startingLevel = 1): BreakerState {
   const paddle = createPaddle();
   return {
     phase: "ready",
+    readyReason: "initial",
     level: levelNumber,
     levelName: definition.name,
     levelSeed: definition.seed,
@@ -186,6 +204,7 @@ export function createRun(startingLevel = 1): BreakerState {
     bricks: buildBricks(definition),
     drops: [],
     effects: { wideRemainingMs: 0, slowRemainingMs: 0 },
+    skills: { laserShots: 0, shieldCharges: 0, stickyArmed: false },
     elapsedMs: 0,
     nextBallId: 2,
     event: null,
@@ -194,7 +213,9 @@ export function createRun(startingLevel = 1): BreakerState {
 }
 
 export function launchBall(state: BreakerState): BreakerState {
-  if (state.phase !== "ready") return state;
+  if (!["ready", "playing"].includes(state.phase) || !state.balls.some((ball) => ball.attached)) {
+    return state;
+  }
   const direction = (state.level + state.lives) % 2 === 0 ? 1 : -1;
   const angle = Math.PI * (0.42 + direction * 0.035);
   return emit({
@@ -318,7 +339,9 @@ function hashText(value: string, seed: number) {
 export function powerUpForBrick(brickId: string, seed: number): PowerUpType | null {
   const hash = hashText(brickId, seed);
   if (hash % 7 !== 0) return null;
-  return (["wide", "multiball", "slow"] as const)[Math.floor(hash / 7) % 3];
+  return (["wide", "multiball", "slow", "laser", "shield", "sticky"] as const)[
+    Math.floor(hash / 7) % 6
+  ] ?? null;
 }
 
 function createDrop(brick: BrickState, state: BreakerState): PowerUpDrop | null {
@@ -414,14 +437,34 @@ function advanceBall(
     && nextX + next.radius >= state.paddle.x
     && nextX - next.radius <= state.paddle.x + state.paddle.width;
   if (paddleCollision) {
-    next = reboundFromPaddle(
-      { ...next, x: nextX, y: nextY },
-      state.paddle,
-      state.effects.slowRemainingMs > 0,
-    );
-    nextX = next.x;
-    nextY = next.y;
-    event = "paddle";
+    if (state.skills.stickyArmed) {
+      next = {
+        ...next,
+        x: state.paddle.x + state.paddle.width / 2,
+        y: state.paddle.y - next.radius - 3,
+        vx: 0,
+        vy: 0,
+        attached: true,
+      };
+      nextX = next.x;
+      nextY = next.y;
+      const hasFreeBall = state.balls.some((item) => item.id !== ball.id && !item.attached);
+      state = emit({
+        ...state,
+        phase: hasFreeBall ? "playing" : "ready",
+        readyReason: "sticky",
+        skills: { ...state.skills, stickyArmed: false },
+      }, "sticky");
+    } else {
+      next = reboundFromPaddle(
+        { ...next, x: nextX, y: nextY },
+        state.paddle,
+        state.effects.slowRemainingMs > 0,
+      );
+      nextX = next.x;
+      nextY = next.y;
+      event = "paddle";
+    }
   } else {
     let earliest: { collision: Collision; brick: BrickState } | null = null;
     for (const brick of state.bricks) {
@@ -501,6 +544,21 @@ function updateDrops(state: BreakerState, dt: number): BreakerState {
 }
 
 function loseLife(state: BreakerState): BreakerState {
+  if (state.skills.shieldCharges > 0) {
+    const paddle = createPaddle();
+    return emit({
+      ...state,
+      phase: "ready",
+      readyReason: "shield",
+      combo: 1,
+      paddle,
+      balls: [createAttachedBall(paddle, state.nextBallId)],
+      nextBallId: state.nextBallId + 1,
+      drops: [],
+      effects: { wideRemainingMs: 0, slowRemainingMs: 0 },
+      skills: { ...state.skills, shieldCharges: 0 },
+    }, "shield");
+  }
   const lives = state.lives - 1;
   if (lives <= 0) {
     return emit({
@@ -510,6 +568,7 @@ function loseLife(state: BreakerState): BreakerState {
       drops: [],
       combo: 1,
       phase: "gameover",
+      readyReason: "life-lost",
       effects: { wideRemainingMs: 0, slowRemainingMs: 0 },
       paddle: createPaddle(),
     }, "gameover");
@@ -520,6 +579,7 @@ function loseLife(state: BreakerState): BreakerState {
     lives,
     combo: 1,
     phase: "ready",
+    readyReason: "life-lost",
     paddle,
     balls: [createAttachedBall(paddle, state.nextBallId)],
     nextBallId: state.nextBallId + 1,
@@ -549,6 +609,7 @@ export function startNextLevel(state: BreakerState): BreakerState {
   return {
     ...state,
     phase: "ready",
+    readyReason: "next-level",
     level,
     levelName: definition.name,
     levelSeed: definition.seed,
@@ -563,7 +624,47 @@ export function startNextLevel(state: BreakerState): BreakerState {
   };
 }
 
+export function fireLaser(state: BreakerState, worldX: number): BreakerState {
+  if (state.skills.laserShots <= 0 || state.phase !== "playing") return state;
+  const target = state.bricks
+    .filter((brick) =>
+      !brick.destroyed
+      && brick.kind !== "indestructible"
+      && worldX >= brick.x
+      && worldX <= brick.x + brick.width)
+    .sort((left, right) => right.y - left.y)[0];
+  if (!target || target.kind === "indestructible") return state;
+  const destroyed = { ...target, hitsRemaining: 0, destroyed: true };
+  let next: BreakerState = {
+    ...state,
+    bricks: state.bricks.map((brick) => brick.id === target.id ? destroyed : brick),
+    skills: { ...state.skills, laserShots: state.skills.laserShots - 1 },
+  };
+  next = rewardBrickDamage(next, target.kind);
+  const drop = createDrop(target, next);
+  if (drop) next = { ...next, drops: [...next.drops, drop] };
+  return emit(next, "laser");
+}
+
 export function applyPowerUp(state: BreakerState, type: PowerUpType): BreakerState {
+  if (type === "laser") {
+    return emit({
+      ...state,
+      skills: { ...state.skills, laserShots: 3 },
+    }, "power-collect");
+  }
+  if (type === "shield") {
+    return emit({
+      ...state,
+      skills: { ...state.skills, shieldCharges: 1 },
+    }, "power-collect");
+  }
+  if (type === "sticky") {
+    return emit({
+      ...state,
+      skills: { ...state.skills, stickyArmed: true },
+    }, "power-collect");
+  }
   if (type === "wide") {
     const width = WIDE_PADDLE_WIDTH;
     return emit({
