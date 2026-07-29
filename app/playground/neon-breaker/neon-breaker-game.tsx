@@ -418,14 +418,17 @@ export default function NeonBreakerGame() {
 
   const pointerX = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    inputRef.current.pointerX = ((event.clientX - rect.left) / rect.width) * WORLD_WIDTH;
+    const worldX = ((event.clientX - rect.left) / rect.width) * WORLD_WIDTH;
+    inputRef.current.pointerX = worldX;
+    return worldX;
   };
   const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
-    pointerX(event);
+    const targetX = pointerX(event);
     unlockAudio();
-    if (stateRef.current.phase === "ready" || stateRef.current.balls.some((ball) => ball.attached)) launch();
-    else if (stateRef.current.phase === "playing" && stateRef.current.skills.laserShots > 0) {
+    if (stateRef.current.phase === "ready" || stateRef.current.balls.some((ball) => ball.attached)) {
+      sync(launchBall(stateRef.current, targetX));
+    } else if (stateRef.current.phase === "playing" && stateRef.current.skills.laserShots > 0) {
       sync(fireLaser(
         stateRef.current,
         stateRef.current.paddle.x + stateRef.current.paddle.width / 2,

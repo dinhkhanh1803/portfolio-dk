@@ -212,18 +212,25 @@ export function createRun(startingLevel = 1): BreakerState {
   };
 }
 
-export function launchBall(state: BreakerState): BreakerState {
+export function launchBall(state: BreakerState, pointerX?: number): BreakerState {
   if (!["ready", "playing"].includes(state.phase) || !state.balls.some((ball) => ball.attached)) {
     return state;
   }
+  const paddle = Number.isFinite(pointerX)
+    ? { ...state.paddle, x: clamp((pointerX as number) - state.paddle.width / 2, 0, WORLD_WIDTH - state.paddle.width) }
+    : state.paddle;
+  const launchX = paddle.x + paddle.width / 2;
   const direction = (state.level + state.lives) % 2 === 0 ? 1 : -1;
   const angle = Math.PI * (0.42 + direction * 0.035);
   return emit({
     ...state,
     phase: "playing",
+    paddle,
     balls: state.balls.map((ball) => ball.attached
       ? {
           ...ball,
+          x: launchX,
+          y: paddle.y - ball.radius - 3,
           attached: false,
           vx: Math.cos(angle) * ball.speed,
           vy: -Math.abs(Math.sin(angle) * ball.speed),

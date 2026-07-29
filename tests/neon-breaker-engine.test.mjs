@@ -331,6 +331,27 @@ test("sticky catches the next paddle contact and Space releases it", () => {
   assert.equal(launchBall(caught).phase, "playing");
 });
 
+test("touch re-serve moves an attached sticky ball with the paddle before launch", () => {
+  const armed = applyPowerUp(launchBall(createRun()), "sticky");
+  const caught = step({
+    ...armed,
+    balls: [{
+      ...armed.balls[0],
+      x: armed.paddle.x + armed.paddle.width / 2,
+      y: armed.paddle.y - BALL_RADIUS - 2,
+      vx: 0,
+      vy: 900,
+      speed: 900,
+      baseSpeed: 900,
+    }],
+  }, 16, NO_INPUT);
+  const launched = launchBall(caught, 120);
+  assert.equal(launched.phase, "playing");
+  assert.equal(launched.paddle.x + launched.paddle.width / 2, 120);
+  assert.equal(launched.balls[0].x, 120);
+  assert.equal(launched.balls[0].attached, false);
+});
+
 test("sticky catches one multiball without freezing the remaining active balls", () => {
   const armed = applyPowerUp(applyPowerUp(launchBall(createRun()), "multiball"), "sticky");
   const contact = armed.balls[0];
