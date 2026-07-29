@@ -64,5 +64,6 @@ test("auto-placement completes every fleet for a useful seed range", () => {
     const cells = match.player.ships.flatMap((ship) => ship.cells);
     assert.equal(match.player.ships.length, FLEET.length, `seed ${seed}`);
     assert.equal(new Set(cells.map(cellKey)).size, 17, `seed ${seed}`);
+    assert.ok(cells.every(({ x, y }) => x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE), `seed ${seed}`);
   }
 });
