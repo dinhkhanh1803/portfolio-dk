@@ -49,8 +49,6 @@ function drawGame(canvas: HTMLCanvasElement, run: SerpentRun, dark: boolean, red
     context.strokeStyle = "#9d7bff"; context.lineWidth = 5; context.beginPath();
     context.arc((cell.x + .5) * cellW, (cell.y + .5) * cellH, cellW * .34, 0, Math.PI * 2); context.stroke();
   });
-  run.pickups.forEach((pickup) => {
-    const skill = SKILLS[pickup.type]; context.fillStyle = skill.color;
   const lasers = activeLaserCells(run);
   if (lasers.length) {
     context.fillStyle = "rgba(255,82,120,.68)";
@@ -61,6 +59,8 @@ function drawGame(canvas: HTMLCanvasElement, run: SerpentRun, dark: boolean, red
     context.beginPath(); context.arc((run.exitPortal.x + .5) * cellW, (run.exitPortal.y + .5) * cellH, cellW * .36, 0, Math.PI * 2); context.stroke();
     context.shadowBlur = 0;
   }
+  run.pickups.forEach((pickup) => {
+    const skill = SKILLS[pickup.type]; context.fillStyle = skill.color;
     context.beginPath(); context.roundRect(pickup.cell.x * cellW + 6, pickup.cell.y * cellH + 6, cellW - 12, cellH - 12, 8); context.fill();
     context.fillStyle = "#062027"; context.font = "700 13px system-ui"; context.textAlign = "center";
     context.fillText(skill.symbol, (pickup.cell.x + .5) * cellW, (pickup.cell.y + .67) * cellH);
@@ -216,15 +216,15 @@ export default function NeonSerpentGame() {
         </div>
         <div className={styles.bottom}>
           <div className={styles.settings}>
-            {(["easy", "normal", "hard"] as Difficulty[]).map((item) => <button type="button" aria-pressed={difficulty === item} key={item} onClick={() => { setDifficulty(item); const next = createSerpentRun(item); runRef.current = next; setRun(next); }}>{item}</button>)}
+            {(["easy", "normal", "hard"] as Difficulty[]).map((item) => <button type="button" disabled={run.phase !== "ready" || run.stage !== 1 || run.mode !== "campaign"} aria-pressed={difficulty === item} key={item} onClick={() => { setDifficulty(item); const next = createSerpentRun(item); runRef.current = next; setRun(next); }}>{item}</button>)}
+            {Array.from({ length: progress.highestStage }, (_, index) => (
+              <button type="button" key={`stage-${index + 1}`} onClick={() => reset(index + 1)}>S{index + 1}</button>
+            ))}
             <button type="button" disabled={!progress.endlessUnlocked} onClick={() => publish(startEndless(runRef.current, progress.endlessUnlocked))}>Endless</button>
           </div>
           <div className={styles.dpad} aria-label="Directional controls">
             <button type="button" onClick={() => input("up")}><ArrowUp /></button><span />
             <button type="button" onClick={() => input("left")}><ArrowLeft /></button>
-            {Array.from({ length: progress.highestStage }, (_, index) => (
-              <button type="button" key={`stage-${index + 1}`} onClick={() => reset(index + 1)}>S{index + 1}</button>
-            ))}
             <button type="button" onClick={() => input("down")}><ArrowDown /></button>
             <button type="button" onClick={() => input("right")}><ArrowRight /></button>
           </div>

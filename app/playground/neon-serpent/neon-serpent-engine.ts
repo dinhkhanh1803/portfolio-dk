@@ -45,6 +45,7 @@ export type SerpentRun = {
   effects: Record<Exclude<SkillType, "shield">, number>;
   boss: BossState | null;
   seed: number;
+  geometrySeed: number;
   nextId: number;
   event: SerpentEvent | null;
   campaignComplete: boolean;
@@ -65,9 +66,9 @@ const advanceSeed = (seed: number) => {
   const next = (Math.imul(seed || 1, 1664525) + 1013904223) >>> 0;
   return { seed: next, value: next / 4294967296 };
 };
-export const getRunDefinition = (state: Pick<SerpentRun, "stage" | "mode" | "wave" | "difficulty" | "seed">) =>
-  state.mode === "endless" ? generateEndlessStage(state.wave, state.difficulty, state.seed) : getStage(state.stage);
-const freeCell = (state: Pick<SerpentRun, "seed" | "snake" | "stage" | "mode" | "wave" | "difficulty"> & Partial<Pick<SerpentRun, "boundaryInset" | "hunter" | "pickups" | "core">>) => {
+export const getRunDefinition = (state: Pick<SerpentRun, "stage" | "mode" | "wave" | "difficulty" | "geometrySeed">) =>
+  state.mode === "endless" ? generateEndlessStage(state.wave, state.difficulty, state.geometrySeed) : getStage(state.stage);
+const freeCell = (state: Pick<SerpentRun, "seed" | "geometrySeed" | "snake" | "stage" | "mode" | "wave" | "difficulty"> & Partial<Pick<SerpentRun, "boundaryInset" | "hunter" | "pickups" | "core">>) => {
   let seed = state.seed;
   const walls = getRunDefinition(state).walls;
   for (let attempt = 0; attempt < GRID.columns * GRID.rows; attempt += 1) {
@@ -131,7 +132,7 @@ export const createSerpentRun = (difficulty: Difficulty = "normal", stage = 1, s
     comboRemainingMs: settings.comboMs, coresCollected: 0, target: definition.target,
     tickMs: Math.round(definition.tickMs * settings.speedScale), accumulatorMs: 0,
     invulnerableMs: 0, effects: { magnet: 0, slowTime: 0, phase: 0, scoreBoost: 0 },
-    boss: bossFor(definition.boss), seed: seed >>> 0, nextId: 1, event: null,
+    boss: bossFor(definition.boss), seed: seed >>> 0, geometrySeed: seed >>> 0, nextId: 1, event: null,
     campaignComplete: false, portalCooldownMs: 0, boundaryInset: 0,
     hunter: definition.hazards.includes("hunter") ? { x: 20, y: 13 } : null,
     hazardElapsedMs: 0, exitPortal: null,
@@ -153,6 +154,7 @@ const nextHead = (head: Cell, direction: Direction): Cell => direction === "up"
 
 export const activeLaserCells = (state: SerpentRun): Cell[] => {
   const definition = getRunDefinition(state);
+  if (state.exitPortal) return [];
   if (!definition.hazards.includes("laser")) return [];
   const elapsed = state.boss?.elapsedMs ?? state.hazardElapsedMs;
   if (elapsed % 2600 < 1800) return [];
@@ -215,7 +217,7 @@ const portalDestination = (state: SerpentRun, head: Cell) => {
   return head;
 };
 const moveHunter = (state: SerpentRun) => {
-  if (!state.hunter || state.coresCollected % 2 !== 0) return state.hunter;
+  if (state.exitPortal || !state.hunter || state.coresCollected % 2 !== 0) return state.exitPortal ? null : state.hunter;
   const target = state.snake[Math.min(state.snake.length - 1, 3)];
   const dx = Math.sign(target.x - state.hunter.x);
   const dy = Math.sign(target.y - state.hunter.y);
@@ -262,7 +264,7 @@ const moveOneTick = (state: SerpentRun): SerpentRun => {
   });
   if ((boss && boss.shield === 0) || (!boss && next.coresCollected >= next.target)) {
     const exit = freeCell({ ...next, snake: [...next.snake, next.core] });
-    return withEvent({ ...next, seed: exit.seed, exitPortal: exit.cell }, boss ? "boss" : "stage", "PORTAL OPEN");
+    return withEvent({ ...next, seed: exit.seed, exitPortal: exit.cell, hunter: null, boundaryInset: 0 }, boss ? "boss" : "stage", "PORTAL OPEN");
   }
   return next;
 };
@@ -271,17 +273,18 @@ export const stepSerpent = (state: SerpentRun, elapsedMs: number): SerpentRun =>
   if (["paused", "stageClear", "victory", "gameover"].includes(state.phase)) return state;
   const definition = getRunDefinition(state);
   const elapsed = Math.max(0, elapsedMs);
-  const bossElapsed = (state.boss?.elapsedMs ?? 0) + elapsed;
-  const boss = state.boss ? {
+  const exiting = Boolean(state.exitPortal);
+  const bossElapsed = (state.boss?.elapsedMs ?? 0) + (exiting ? 0 : elapsed);
+  const boss = state.boss && !exiting ? {
     ...state.boss,
     elapsedMs: bossElapsed,
     phase: state.boss.type === "hydra" ? (state.boss.shield <= 4 ? 3 : state.boss.shield <= 8 ? 2 : 1) : 1,
-  } : null;
-  const contract = definition.hazards.includes("contract")
+  } : state.boss;
+  const contract = !exiting && definition.hazards.includes("contract")
     ? Math.min(3, Math.floor((state.coresCollected + Math.floor(bossElapsed / 9000)) / 6))
     : 0;
   let next: SerpentRun = {
-    ...state, boss, boundaryInset: contract, hazardElapsedMs: state.hazardElapsedMs + elapsed, phase: state.phase === "ready" ? "playing" : state.phase,
+    ...state, boss, boundaryInset: contract, hunter: exiting ? null : state.hunter, hazardElapsedMs: state.hazardElapsedMs + (exiting ? 0 : elapsed), phase: state.phase === "ready" ? "playing" : state.phase,
     accumulatorMs: state.accumulatorMs + elapsed,
     invulnerableMs: Math.max(0, state.invulnerableMs - elapsed),
     comboRemainingMs: Math.max(0, state.comboRemainingMs - elapsed),
@@ -311,16 +314,28 @@ export const stepSerpent = (state: SerpentRun, elapsedMs: number): SerpentRun =>
   return next;
 };
 
+const createEndlessWave = (state: SerpentRun, wave: number): SerpentRun => {
+  const geometrySeed = state.seed >>> 0;
+  const base = createSerpentRun(state.difficulty, 8, geometrySeed);
+  const definition = generateEndlessStage(wave, state.difficulty, geometrySeed);
+  const prepared: SerpentRun = {
+    ...base, mode: "endless", wave, campaignComplete: true, geometrySeed,
+    target: definition.target, tickMs: definition.tickMs, boss: bossFor(definition.boss),
+    hunter: definition.hazards.includes("hunter") ? { x: 20, y: 13 } : null,
+  };
+  const spawned = freeCell(prepared);
+  return { ...prepared, core: spawned.cell, seed: spawned.seed };
+};
+
 export const advanceStage = (state: SerpentRun): SerpentRun => {
   if (state.phase !== "stageClear") return state;
   if (state.mode === "campaign" && state.stage >= STAGES.length) {
     return withEvent({ ...state, phase: "victory", campaignComplete: true }, "stage", "CAMPAIGN COMPLETE");
   }
   if (state.mode === "endless") {
-    const next = createSerpentRun(state.difficulty, 8, state.seed);
-    const definition = generateEndlessStage(state.wave + 1, state.difficulty, state.seed);
-    return { ...next, mode: "endless", wave: state.wave + 1, phase: "ready", score: state.score,
-      campaignComplete: true, target: definition.target, tickMs: definition.tickMs, boss: bossFor(definition.boss) };
+    const next = createEndlessWave(state, state.wave + 1);
+    return { ...next, phase: "ready", score: state.score, lives: state.lives,
+      shieldCharges: state.shieldCharges };
   }
   const next = createSerpentRun(state.difficulty, state.stage + 1, state.seed);
   return { ...next, score: state.score, lives: state.lives, shieldCharges: state.shieldCharges };
@@ -328,8 +343,5 @@ export const advanceStage = (state: SerpentRun): SerpentRun => {
 
 export const startEndless = (state: SerpentRun, unlocked = state.campaignComplete): SerpentRun => {
   if (!unlocked) return state;
-  const next = createSerpentRun(state.difficulty, 8, state.seed);
-  const definition = generateEndlessStage(1, state.difficulty, state.seed);
-  return { ...next, mode: "endless", wave: 1, campaignComplete: true,
-    target: definition.target, tickMs: definition.tickMs, boss: bossFor(definition.boss) };
+  return createEndlessWave(state, 1);
 };
