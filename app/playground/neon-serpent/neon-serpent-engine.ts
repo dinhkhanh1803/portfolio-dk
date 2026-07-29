@@ -51,6 +51,8 @@ export type SerpentRun = {
   portalCooldownMs: number;
   boundaryInset: number;
   hunter: Cell | null;
+  hazardElapsedMs: number;
+  exitPortal: Cell | null;
 };
 
 const START_SNAKE: Cell[] = [
@@ -63,17 +65,24 @@ const advanceSeed = (seed: number) => {
   const next = (Math.imul(seed || 1, 1664525) + 1013904223) >>> 0;
   return { seed: next, value: next / 4294967296 };
 };
-const currentDefinition = (state: Pick<SerpentRun, "stage" | "mode" | "wave" | "difficulty" | "seed">) =>
+export const getRunDefinition = (state: Pick<SerpentRun, "stage" | "mode" | "wave" | "difficulty" | "seed">) =>
   state.mode === "endless" ? generateEndlessStage(state.wave, state.difficulty, state.seed) : getStage(state.stage);
-const freeCell = (state: Pick<SerpentRun, "seed" | "snake" | "stage" | "mode" | "wave" | "difficulty">) => {
+const freeCell = (state: Pick<SerpentRun, "seed" | "snake" | "stage" | "mode" | "wave" | "difficulty"> & Partial<Pick<SerpentRun, "boundaryInset" | "hunter" | "pickups" | "core">>) => {
   let seed = state.seed;
-  const walls = currentDefinition(state).walls;
+  const walls = getRunDefinition(state).walls;
   for (let attempt = 0; attempt < GRID.columns * GRID.rows; attempt += 1) {
     const randomX = advanceSeed(seed);
     const randomY = advanceSeed(randomX.seed);
     seed = randomY.seed;
     const cell = { x: Math.floor(randomX.value * GRID.columns), y: Math.floor(randomY.value * GRID.rows) };
-    if (!state.snake.some((part) => sameCell(part, cell)) && !walls.some((wall) => sameCell(wall, cell))) {
+    const portals = getRunDefinition(state).portals ?? [];
+    const blocked = !inside(cell, state.boundaryInset ?? 0)
+      || state.snake.some((part) => sameCell(part, cell)) || walls.some((wall) => sameCell(wall, cell))
+      || portals.some((portal) => sameCell(portal, cell))
+      || Boolean(state.hunter && sameCell(state.hunter, cell))
+      || Boolean(state.core && sameCell(state.core, cell))
+      || Boolean(state.pickups?.some((pickup) => sameCell(pickup.cell, cell)));
+    if (!blocked) {
       return { cell, seed };
     }
   }
@@ -125,6 +134,7 @@ export const createSerpentRun = (difficulty: Difficulty = "normal", stage = 1, s
     boss: bossFor(definition.boss), seed: seed >>> 0, nextId: 1, event: null,
     campaignComplete: false, portalCooldownMs: 0, boundaryInset: 0,
     hunter: definition.hazards.includes("hunter") ? { x: 20, y: 13 } : null,
+    hazardElapsedMs: 0, exitPortal: null,
   };
   const spawned = freeCell(base);
   return { ...base, core: spawned.cell, seed: spawned.seed };
@@ -141,16 +151,20 @@ const nextHead = (head: Cell, direction: Direction): Cell => direction === "up"
     ? { x: head.x, y: head.y + 1 }
     : direction === "left" ? { x: head.x - 1, y: head.y } : { x: head.x + 1, y: head.y };
 
-const laserDanger = (state: SerpentRun, cell: Cell) => {
-  const definition = currentDefinition(state);
-  if (!definition.hazards.includes("laser") || !state.boss) return false;
-  const cycle = state.boss.elapsedMs % 2600;
-  if (cycle < 1800) return false;
-  const lane = (state.boss.phase * 3 + Math.floor(state.boss.elapsedMs / 2600)) % GRID.rows;
-  return cell.y === lane || (state.boss.type === "hydra" && cell.x === (lane * 5) % GRID.columns);
+export const activeLaserCells = (state: SerpentRun): Cell[] => {
+  const definition = getRunDefinition(state);
+  if (!definition.hazards.includes("laser")) return [];
+  const elapsed = state.boss?.elapsedMs ?? state.hazardElapsedMs;
+  if (elapsed % 2600 < 1800) return [];
+  const phase = state.boss?.phase ?? 1;
+  const lane = (phase * 3 + Math.floor(elapsed / 2600)) % GRID.rows;
+  const cells = Array.from({ length: GRID.columns }, (_, x) => ({ x, y: lane }));
+  if (state.boss?.type === "hydra") cells.push(...Array.from({ length: GRID.rows }, (_, y) => ({ x: (lane * 5) % GRID.columns, y })));
+  return cells;
 };
+const laserDanger = (state: SerpentRun, cell: Cell) => activeLaserCells(state).some((laser) => sameCell(laser, cell));
 export const isDangerousCell = (state: SerpentRun, cell: Cell) => {
-  const definition = currentDefinition(state);
+  const definition = getRunDefinition(state);
   return !inside(cell, state.boundaryInset)
     || definition.walls.some((wall) => sameCell(wall, cell))
     || Boolean(state.hunter && sameCell(state.hunter, cell))
@@ -194,7 +208,7 @@ const maybeDropPickup = (state: SerpentRun): SerpentRun => {
   };
 };
 const portalDestination = (state: SerpentRun, head: Cell) => {
-  const portals = currentDefinition(state).portals;
+  const portals = getRunDefinition(state).portals;
   if (!portals || state.portalCooldownMs > 0) return head;
   if (sameCell(head, portals[0])) return { ...portals[1] };
   if (sameCell(head, portals[1])) return { ...portals[0] };
@@ -216,7 +230,13 @@ const moveOneTick = (state: SerpentRun): SerpentRun => {
   const head = portalDestination(state, rawHead);
   const phaseSafe = state.effects.phase > 0;
   const selfHit = state.snake.slice(0, -1).some((cell) => sameCell(cell, head));
-  if (state.invulnerableMs <= 0 && !phaseSafe && (isDangerousCell(state, head) || selfHit)) {
+  if (state.exitPortal && sameCell(state.exitPortal, head)) {
+    return withEvent({ ...state, snake: [head, ...state.snake.slice(0, -1)], phase: "stageClear" }, "stage", "STAGE CLEAR");
+  }
+  const definition = getRunDefinition(state);
+  const phaseBlocked = !inside(head, state.boundaryInset) || Boolean(state.hunter && sameCell(state.hunter, head)) || laserDanger(state, head);
+  const normalBlocked = phaseBlocked || definition.walls.some((wall) => sameCell(wall, head)) || selfHit;
+  if (state.invulnerableMs <= 0 && (phaseSafe ? phaseBlocked : normalBlocked)) {
     return respawn(state, state.shieldCharges > 0);
   }
   const ate = sameCell(head, state.core);
@@ -241,26 +261,27 @@ const moveOneTick = (state: SerpentRun): SerpentRun => {
     boss, event: { id: state.nextId, type: "core", label: `x${combo}` }, nextId: state.nextId + 1,
   });
   if ((boss && boss.shield === 0) || (!boss && next.coresCollected >= next.target)) {
-    return withEvent({ ...next, phase: "stageClear" }, boss ? "boss" : "stage", "PORTAL OPEN");
+    const exit = freeCell({ ...next, snake: [...next.snake, next.core] });
+    return withEvent({ ...next, seed: exit.seed, exitPortal: exit.cell }, boss ? "boss" : "stage", "PORTAL OPEN");
   }
   return next;
 };
 
 export const stepSerpent = (state: SerpentRun, elapsedMs: number): SerpentRun => {
   if (["paused", "stageClear", "victory", "gameover"].includes(state.phase)) return state;
-  const definition = currentDefinition(state);
+  const definition = getRunDefinition(state);
   const elapsed = Math.max(0, elapsedMs);
   const bossElapsed = (state.boss?.elapsedMs ?? 0) + elapsed;
   const boss = state.boss ? {
     ...state.boss,
     elapsedMs: bossElapsed,
-    phase: state.boss.type === "hydra" ? Math.min(3, 1 + Math.floor(bossElapsed / 4000)) : 1,
+    phase: state.boss.type === "hydra" ? (state.boss.shield <= 4 ? 3 : state.boss.shield <= 8 ? 2 : 1) : 1,
   } : null;
   const contract = definition.hazards.includes("contract")
     ? Math.min(3, Math.floor((state.coresCollected + Math.floor(bossElapsed / 9000)) / 6))
     : 0;
   let next: SerpentRun = {
-    ...state, boss, boundaryInset: contract, phase: state.phase === "ready" ? "playing" : state.phase,
+    ...state, boss, boundaryInset: contract, hazardElapsedMs: state.hazardElapsedMs + elapsed, phase: state.phase === "ready" ? "playing" : state.phase,
     accumulatorMs: state.accumulatorMs + elapsed,
     invulnerableMs: Math.max(0, state.invulnerableMs - elapsed),
     comboRemainingMs: Math.max(0, state.comboRemainingMs - elapsed),
@@ -279,6 +300,13 @@ export const stepSerpent = (state: SerpentRun, elapsedMs: number): SerpentRun =>
   while (next.accumulatorMs >= effectiveTick) {
     next = { ...moveOneTick(next), accumulatorMs: next.accumulatorMs - effectiveTick };
     if (next.phase !== "playing") break;
+    if (next.effects.magnet > 0) {
+      const head = next.snake[0];
+      const dx = Math.sign(head.x - next.core.x);
+      const dy = Math.sign(head.y - next.core.y);
+      const pulled = Math.abs(head.x - next.core.x) >= Math.abs(head.y - next.core.y) ? { x: next.core.x + dx, y: next.core.y } : { x: next.core.x, y: next.core.y + dy };
+      if (!isDangerousCell(next, pulled) && !next.snake.some((cell) => sameCell(cell, pulled))) next = { ...next, core: pulled };
+    }
   }
   return next;
 };

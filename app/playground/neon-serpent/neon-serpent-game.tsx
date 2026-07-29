@@ -4,7 +4,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, RefreshCw, Volu
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../language-provider";
 import { GRID, SKILLS, getStage, type Difficulty } from "./neon-serpent-data";
-import { advanceStage, createSerpentRun, queueDirection, startEndless, stepSerpent, type Direction, type SerpentRun } from "./neon-serpent-engine";
+import { activeLaserCells, advanceStage, createSerpentRun, getRunDefinition, queueDirection, startEndless, stepSerpent, type Direction, type SerpentRun } from "./neon-serpent-engine";
 import { createSerpentAudio } from "./neon-serpent-audio";
 import { DEFAULT_PROGRESS, MUTED_KEY, PROGRESS_KEY, parseProgress, safeRead, safeWrite, type SerpentProgress } from "./neon-serpent-storage";
 import styles from "./neon-serpent.module.css";
@@ -42,14 +42,25 @@ function drawGame(canvas: HTMLCanvasElement, run: SerpentRun, dark: boolean, red
     context.fillRect(0, insetY, insetX, GRID.height - insetY * 2); context.fillRect(GRID.width - insetX, insetY, insetX, GRID.height - insetY * 2);
   }
   context.fillStyle = colors.wall;
-  getStage(run.stage).walls.forEach((cell) => context.fillRect(cell.x * cellW + 3, cell.y * cellH + 3, cellW - 6, cellH - 6));
-  const portals = getStage(run.stage).portals;
+  const definition = getRunDefinition(run);
+  definition.walls.forEach((cell) => context.fillRect(cell.x * cellW + 3, cell.y * cellH + 3, cellW - 6, cellH - 6));
+  const portals = definition.portals;
   portals?.forEach((cell) => {
     context.strokeStyle = "#9d7bff"; context.lineWidth = 5; context.beginPath();
     context.arc((cell.x + .5) * cellW, (cell.y + .5) * cellH, cellW * .34, 0, Math.PI * 2); context.stroke();
   });
   run.pickups.forEach((pickup) => {
     const skill = SKILLS[pickup.type]; context.fillStyle = skill.color;
+  const lasers = activeLaserCells(run);
+  if (lasers.length) {
+    context.fillStyle = "rgba(255,82,120,.68)";
+    lasers.forEach((cell) => context.fillRect(cell.x * cellW + 2, cell.y * cellH + 2, cellW - 4, cellH - 4));
+  }
+  if (run.exitPortal) {
+    context.strokeStyle = "#7cff9d"; context.lineWidth = 7; context.shadowColor = "#7cff9d"; context.shadowBlur = reduced ? 0 : 20;
+    context.beginPath(); context.arc((run.exitPortal.x + .5) * cellW, (run.exitPortal.y + .5) * cellH, cellW * .36, 0, Math.PI * 2); context.stroke();
+    context.shadowBlur = 0;
+  }
     context.beginPath(); context.roundRect(pickup.cell.x * cellW + 6, pickup.cell.y * cellH + 6, cellW - 12, cellH - 12, 8); context.fill();
     context.fillStyle = "#062027"; context.font = "700 13px system-ui"; context.textAlign = "center";
     context.fillText(skill.symbol, (pickup.cell.x + .5) * cellW, (pickup.cell.y + .67) * cellH);
@@ -157,17 +168,22 @@ export default function NeonSerpentGame() {
       const elapsed = lastRef.current ? Math.min(80, time - lastRef.current) : 0; lastRef.current = time;
       let next = runRef.current;
       const previousEventId = next.event?.id;
+      const previousPhase = next.phase;
       if (next.phase === "playing") next = stepSerpent(next, elapsed);
       if (next.event && next.event.id !== previousEventId) {
         audioRef.current?.play(next.event.type === "core" ? "core" : next.event.type === "damage" ? "damage" : next.event.type === "shield" ? "shield" : "skill", next.combo);
       }
-      runRef.current = next; setRun(next);
+      if (next.phase !== previousPhase && ["stageClear", "victory", "gameover"].includes(next.phase)) {
+        publish(next);
+      } else {
+        runRef.current = next; setRun(next);
+      }
       if (canvasRef.current) drawGame(canvasRef.current, next, dark, reducedRef.current);
       frameRef.current = requestAnimationFrame(loop);
     };
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [dark]);
+  }, [dark, publish]);
 
   const reset = (stage = 1) => { const next = createSerpentRun(difficulty, stage, Date.now()); runRef.current = next; setRun(next); };
   const nextStage = () => { const next = advanceStage(runRef.current); publish(next); };
@@ -192,7 +208,7 @@ export default function NeonSerpentGame() {
         </div>
         <div className={styles.arenaWrap}>
           <canvas ref={canvasRef} className={styles.canvas} width={GRID.width} height={GRID.height} aria-label="Neon Serpent game arena" />
-          {run.phase === "ready" && <div className={styles.overlay}><Zap /><strong>{getStage(run.stage).name}</strong><span>{copy.ready}</span></div>}
+          {run.phase === "ready" && <div className={styles.overlay}><Zap /><strong>{getRunDefinition(run).name}</strong><span>{copy.ready}</span></div>}
           {run.phase === "paused" && <div className={styles.overlay}><Pause /><strong>Paused</strong><button type="button" onClick={pause}>Resume</button></div>}
           {run.phase === "stageClear" && <div className={styles.overlay}><strong>Stage clear</strong><span>{run.score.toLocaleString()} pts</span><button type="button" onClick={nextStage}>{copy.next}</button></div>}
           {run.phase === "victory" && <div className={styles.overlay}><strong>Campaign complete!</strong><span>Endless unlocked</span><button type="button" onClick={() => publish(startEndless(runRef.current, true))}>Play Endless</button></div>}
@@ -206,6 +222,9 @@ export default function NeonSerpentGame() {
           <div className={styles.dpad} aria-label="Directional controls">
             <button type="button" onClick={() => input("up")}><ArrowUp /></button><span />
             <button type="button" onClick={() => input("left")}><ArrowLeft /></button>
+            {Array.from({ length: progress.highestStage }, (_, index) => (
+              <button type="button" key={`stage-${index + 1}`} onClick={() => reset(index + 1)}>S{index + 1}</button>
+            ))}
             <button type="button" onClick={() => input("down")}><ArrowDown /></button>
             <button type="button" onClick={() => input("right")}><ArrowRight /></button>
           </div>
