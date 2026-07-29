@@ -36,13 +36,11 @@ export type PowerUpType =
   | "multiball"
   | "slow"
   | "laser"
-  | "shield"
-  | "sticky";
-export type ReadyReason = "initial" | "life-lost" | "shield" | "sticky" | "next-level";
+  | "shield";
+export type ReadyReason = "initial" | "life-lost" | "shield" | "next-level";
 export type SkillState = {
   laserShots: number;
   shieldCharges: number;
-  stickyArmed: boolean;
 };
 export type BreakerEvent =
   | "launch"
@@ -53,7 +51,6 @@ export type BreakerEvent =
   | "power-collect"
   | "laser"
   | "shield"
-  | "sticky"
   | "life-lost"
   | "level-clear"
   | "gameover"
@@ -204,7 +201,7 @@ export function createRun(startingLevel = 1): BreakerState {
     bricks: buildBricks(definition),
     drops: [],
     effects: { wideRemainingMs: 0, slowRemainingMs: 0 },
-    skills: { laserShots: 0, shieldCharges: 0, stickyArmed: false },
+    skills: { laserShots: 0, shieldCharges: 0 },
     elapsedMs: 0,
     nextBallId: 2,
     event: null,
@@ -346,8 +343,8 @@ function hashText(value: string, seed: number) {
 export function powerUpForBrick(brickId: string, seed: number): PowerUpType | null {
   const hash = hashText(brickId, seed);
   if (hash % 7 !== 0) return null;
-  return (["wide", "multiball", "slow", "laser", "shield", "sticky"] as const)[
-    Math.floor(hash / 7) % 6
+  return (["wide", "multiball", "slow", "laser", "shield"] as const)[
+    Math.floor(hash / 7) % 5
   ] ?? null;
 }
 
@@ -444,34 +441,14 @@ function advanceBall(
     && nextX + next.radius >= state.paddle.x
     && nextX - next.radius <= state.paddle.x + state.paddle.width;
   if (paddleCollision) {
-    if (state.skills.stickyArmed) {
-      next = {
-        ...next,
-        x: state.paddle.x + state.paddle.width / 2,
-        y: state.paddle.y - next.radius - 3,
-        vx: 0,
-        vy: 0,
-        attached: true,
-      };
-      nextX = next.x;
-      nextY = next.y;
-      const hasFreeBall = state.balls.some((item) => item.id !== ball.id && !item.attached);
-      state = emit({
-        ...state,
-        phase: hasFreeBall ? "playing" : "ready",
-        readyReason: "sticky",
-        skills: { ...state.skills, stickyArmed: false },
-      }, "sticky");
-    } else {
-      next = reboundFromPaddle(
-        { ...next, x: nextX, y: nextY },
-        state.paddle,
-        state.effects.slowRemainingMs > 0,
-      );
-      nextX = next.x;
-      nextY = next.y;
-      event = "paddle";
-    }
+    next = reboundFromPaddle(
+      { ...next, x: nextX, y: nextY },
+      state.paddle,
+      state.effects.slowRemainingMs > 0,
+    );
+    nextX = next.x;
+    nextY = next.y;
+    event = "paddle";
   } else {
     let earliest: { collision: Collision; brick: BrickState } | null = null;
     for (const brick of state.bricks) {
@@ -666,12 +643,7 @@ export function applyPowerUp(state: BreakerState, type: PowerUpType): BreakerSta
       skills: { ...state.skills, shieldCharges: 1 },
     }, "power-collect");
   }
-  if (type === "sticky") {
-    return emit({
-      ...state,
-      skills: { ...state.skills, stickyArmed: true },
-    }, "power-collect");
-  }
+
   if (type === "wide") {
     const width = WIDE_PADDLE_WIDTH;
     return emit({

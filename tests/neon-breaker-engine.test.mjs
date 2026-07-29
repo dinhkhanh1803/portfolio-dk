@@ -219,16 +219,16 @@ test("clears levels one through ten and ends in victory", () => {
   assert.equal(state.phase, "victory");
 });
 
-test("brick drops are deterministic and cover all six skill types", () => {
+test("brick drops are deterministic and cover the five remaining skill types", () => {
   const outcomes = LEVELS.flatMap((level) => level.bricks.map((brick) =>
     powerUpForBrick(brick.id, level.seed),
   ));
   assert.ok(outcomes.some((value) => value === null));
   assert.ok(outcomes.every((value) =>
-    value === null || ["wide", "multiball", "slow", "laser", "shield", "sticky"].includes(value)));
+    value === null || ["wide", "multiball", "slow", "laser", "shield"].includes(value)));
   assert.deepEqual(
     [...new Set(outcomes.filter(Boolean))].sort(),
-    ["laser", "multiball", "shield", "slow", "sticky", "wide"],
+    ["laser", "multiball", "shield", "slow", "wide"],
   );
 });
 test("wide, slow, and multiball power-ups remain bounded", () => {
@@ -311,74 +311,14 @@ test("shield prevents exactly one final-ball loss", () => {
   assert.equal(recovered.skills.shieldCharges, 0);
 });
 
-test("sticky catches the next paddle contact and Space releases it", () => {
-  const armed = applyPowerUp(launchBall(createRun()), "sticky");
-  const caught = step({
-    ...armed,
-    balls: [{
-      ...armed.balls[0],
-      x: armed.paddle.x + armed.paddle.width / 2,
-      y: armed.paddle.y - BALL_RADIUS - 2,
-      vx: 0,
-      vy: 900,
-      speed: 900,
-      baseSpeed: 900,
-    }],
-  }, 16, NO_INPUT);
-  assert.equal(caught.phase, "ready");
-  assert.equal(caught.balls[0].attached, true);
-  assert.equal(caught.skills.stickyArmed, false);
-  assert.equal(launchBall(caught).phase, "playing");
-});
-
-test("touch re-serve moves an attached sticky ball with the paddle before launch", () => {
-  const armed = applyPowerUp(launchBall(createRun()), "sticky");
-  const caught = step({
-    ...armed,
-    balls: [{
-      ...armed.balls[0],
-      x: armed.paddle.x + armed.paddle.width / 2,
-      y: armed.paddle.y - BALL_RADIUS - 2,
-      vx: 0,
-      vy: 900,
-      speed: 900,
-      baseSpeed: 900,
-    }],
-  }, 16, NO_INPUT);
-  const launched = launchBall(caught, 120);
+test("touch re-serve moves an attached ball with the paddle before launch", () => {
+  const ready = createRun();
+  const launched = launchBall(ready, 120);
   assert.equal(launched.phase, "playing");
   assert.equal(launched.paddle.x + launched.paddle.width / 2, 120);
   assert.equal(launched.balls[0].x, 120);
   assert.equal(launched.balls[0].attached, false);
 });
-
-test("sticky catches one multiball without freezing the remaining active balls", () => {
-  const armed = applyPowerUp(applyPowerUp(launchBall(createRun()), "multiball"), "sticky");
-  const contact = armed.balls[0];
-  const other = armed.balls[1];
-  const caught = step({
-    ...armed,
-    balls: [
-      {
-        ...contact,
-        x: armed.paddle.x + armed.paddle.width / 2,
-        y: armed.paddle.y - BALL_RADIUS - 2,
-        vx: 0,
-        vy: 900,
-        speed: 900,
-        baseSpeed: 900,
-      },
-      { ...other, x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, vx: 200, vy: -500 },
-    ],
-  }, 16, NO_INPUT);
-  assert.equal(caught.phase, "playing");
-  assert.equal(caught.balls.filter((ball) => ball.attached).length, 1);
-  assert.equal(caught.balls.filter((ball) => !ball.attached).length, 1);
-  const released = launchBall(caught);
-  assert.equal(released.phase, "playing");
-  assert.equal(released.balls.every((ball) => !ball.attached), true);
-});
-
 test("life loss with lives remaining returns to inline Space serve", () => {
   const playing = launchBall(createRun());
   const next = step({
@@ -406,6 +346,7 @@ test("route wires canvas, input, audio, theme, and accessibility", () => {
   const page = readFileSync("app/playground/neon-breaker/page.tsx", "utf8");
   const game = readFileSync("app/playground/neon-breaker/neon-breaker-game.tsx", "utf8");
   const audio = readFileSync("app/playground/neon-breaker/neon-breaker-audio.ts", "utf8");
+  const engineSource = readFileSync("app/playground/neon-breaker/neon-breaker-engine.ts", "utf8");
   assert.match(page, /metadata/);
   assert.match(page, /NeonBreakerGame/);
   assert.match(game, /<canvas/);
@@ -421,7 +362,10 @@ test("route wires canvas, input, audio, theme, and accessibility", () => {
   assert.match(game, /Space để phát bóng/);
   assert.match(game, /fireLaser/);
   assert.match(game, /readyReason/);
-  for (const skill of ["laser", "shield", "sticky"]) assert.match(game, new RegExp(skill));
+  for (const skill of ["laser", "shield"]) assert.match(game, new RegExp(skill));
+  assert.doesNotMatch(game, /sticky/i);
+  assert.doesNotMatch(audio, /playSticky/);
+  assert.doesNotMatch(engineSource, /sticky/i);
   for (const cue of [
     "playPaddle",
     "playWall",
@@ -433,7 +377,6 @@ test("route wires canvas, input, audio, theme, and accessibility", () => {
     "playVictory",
     "playLaser",
     "playShield",
-    "playSticky",
   ]) assert.match(audio, new RegExp(cue));
 });
 

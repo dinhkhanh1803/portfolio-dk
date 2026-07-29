@@ -147,8 +147,8 @@ export default function PlaygroundPage() {
       categories: ["Arcade", "Reaction", "Skill", "Casual"],
       categoryLabel: "ARCADE · REACTION · SKILL · CASUAL",
       description: language === "vi"
-        ? "Phá gạch qua 10 màn thủ công, giữ combo và thu thập 6 loại skill neon."
-        : "Break through ten handcrafted boards, build combos, and collect six neon skills.",
+        ? "Phá gạch qua 10 màn thủ công, giữ combo và thu thập 5 loại skill neon."
+        : "Break through ten handcrafted boards, build combos, and collect five neon skills.",
       features: [
         { icon: "zap", label: "10 levels" },
         { icon: "audio", label: "Web Audio" },

@@ -144,7 +144,6 @@ function drawGame(
       multiball: "#f37866",
       laser: "#fb6fae",
       shield: "#78a7ff",
-      sticky: "#b98cff",
     }[drop.type];
     context.save();
     context.shadowBlur = 18;
@@ -163,7 +162,6 @@ function drawGame(
       multiball: "×3",
       laser: "L",
       shield: "◆",
-      sticky: "●",
     }[drop.type];
     context.fillText(symbol, drop.x, drop.y + 1);
     context.restore();
@@ -191,7 +189,7 @@ export default function NeonBreakerGame() {
 
   const copy = useMemo(() => language === "vi" ? {
     back: "Tất cả trò chơi", eyebrow: "ARCADE · PHẢN XẠ · KỸ NĂNG", title: "Neon Breaker",
-    intro: "Phá sạch 10 màn gạch neon, giữ combo và săn 6 loại skill trước khi mất cả 3 mạng.",
+    intro: "Phá sạch 10 màn gạch neon, giữ combo và săn 5 loại skill trước khi mất cả 3 mạng.",
     score: "Điểm", best: "Kỷ lục", level: "Màn", lives: "Mạng", combo: "Combo",
     ready: "Sẵn sàng phá gạch?", readyText: "Di chuyển thanh đỡ rồi phóng bóng.", launch: "Phóng bóng",
     paused: "Đã tạm dừng", resume: "Tiếp tục", clear: "Hoàn thành màn!", next: "Màn tiếp theo",
@@ -200,10 +198,10 @@ export default function NeonBreakerGame() {
     touch: "Kéo trực tiếp trên sân để điều khiển thanh đỡ.", soundOn: "Bật âm thanh", soundOff: "Tắt âm thanh",
     pause: "Tạm dừng", restart: "Chơi lại", motion: "Giảm hiệu ứng",
     wide: "Thanh rộng", slow: "Bóng chậm", multiball: "Đa bóng",
-    laser: "Laser", shield: "Khiên", sticky: "Dính bóng", serve: "Space để phát bóng",
+    laser: "Laser", shield: "Khiên", serve: "Space để phát bóng",
   } : {
     back: "All games", eyebrow: "ARCADE · REACTION · SKILL", title: "Neon Breaker",
-    intro: "Smash through ten handcrafted neon boards, hold your combo, and collect six skills before three lives run out.",
+    intro: "Smash through ten handcrafted neon boards, hold your combo, and collect five skills before three lives run out.",
     score: "Score", best: "Best", level: "Level", lives: "Lives", combo: "Combo",
     ready: "Ready to break?", readyText: "Move the paddle, then launch.", launch: "Launch ball",
     paused: "Game paused", resume: "Resume", clear: "Level clear!", next: "Next level",
@@ -212,7 +210,7 @@ export default function NeonBreakerGame() {
     touch: "Drag directly on the arena to move the paddle.", soundOn: "Enable sound", soundOff: "Mute sound",
     pause: "Pause", restart: "Restart", motion: "Reduce motion",
     wide: "Wide paddle", slow: "Slow ball", multiball: "Multiball",
-    laser: "Laser", shield: "Shield", sticky: "Sticky ball", serve: "Press Space to launch",
+    laser: "Laser", shield: "Shield", serve: "Press Space to launch",
   }, [language]);
 
   const sync = useCallback((next: BreakerState) => {
@@ -392,11 +390,10 @@ export default function NeonBreakerGame() {
     if (event === "victory") audioRef.current?.playVictory();
     if (event === "laser") audioRef.current?.playLaser();
     if (event === "shield") audioRef.current?.playShield();
-    if (event === "sticky") audioRef.current?.playSticky();
     const labels: Partial<Record<Exclude<BreakerEvent, null>, string>> = {
       "life-lost": copy.lives, "level-clear": copy.clear, gameover: copy.gameover,
       victory: copy.victory, "power-collect": "Power-up!",
-      laser: copy.laser, shield: copy.shield, sticky: copy.sticky,
+      laser: copy.laser, shield: copy.shield,
     };
     if (!event || !labels[event]) return;
     const timer = window.setTimeout(() => setAnnouncement(labels[event] ?? ""), 0);
@@ -454,7 +451,6 @@ export default function NeonBreakerGame() {
     view.balls.length > 1 ? `${effectLabel("multiball")} ×${view.balls.length}` : null,
     view.skills.laserShots > 0 ? `${copy.laser} ×${view.skills.laserShots}` : null,
     view.skills.shieldCharges > 0 ? `${copy.shield} ◆` : null,
-    view.skills.stickyArmed ? `${copy.sticky} ●` : null,
   ].filter(Boolean);
 
   return (
@@ -499,7 +495,7 @@ export default function NeonBreakerGame() {
             aria-label="Neon Breaker game arena"
           />
           {view.phase !== "playing"
-            && !(view.phase === "ready" && ["life-lost", "shield", "sticky"].includes(view.readyReason))
+            && !(view.phase === "ready" && ["life-lost", "shield"].includes(view.readyReason))
             && (
             <div
                 className={styles.overlay}
@@ -522,7 +518,7 @@ export default function NeonBreakerGame() {
               {(view.phase === "gameover" || view.phase === "victory") && <button type="button" onClick={() => reset()}><RotateCcw size={17} /> {copy.again}</button>}
             </div>
           )}
-          {((view.phase === "ready" && ["life-lost", "shield", "sticky"].includes(view.readyReason))
+          {((view.phase === "ready" && ["life-lost", "shield"].includes(view.readyReason))
             || (view.phase === "playing" && view.balls.some((ball) => ball.attached)))
             && <div className={styles.serveHint} aria-live="polite">{copy.serve}</div>}
         </div>

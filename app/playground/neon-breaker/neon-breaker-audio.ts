@@ -67,7 +67,6 @@ export class NeonBreakerAudio {
     this.tone(360, 0.13, 0.038, "sine", 620);
     this.tone(620, 0.16, 0.03, "sine", 840, 0.07);
   }
-  playSticky() { this.tone(180, 0.12, 0.042, "square", 110); }
 
   dispose() {
     const context = this.context;
