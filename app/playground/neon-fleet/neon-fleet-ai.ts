@@ -126,16 +126,14 @@ export const targetCandidates = (knowledge: AiKnowledge): Cell[] => {
   for (const cluster of unresolvedHitClusters(knowledge.shots)) {
     const represented = new Set<string>();
     const addRunExtensions = (run: Cell[], axis: "horizontal" | "vertical") => {
-      for (const cell of run) represented.add(cellKey(cell));
       const first = run[0];
       const last = run[run.length - 1];
-      if (axis === "horizontal") {
-        add({ x: first.x - 1, y: first.y });
-        add({ x: last.x + 1, y: last.y });
-      } else {
-        add({ x: first.x, y: first.y - 1 });
-        add({ x: last.x, y: last.y + 1 });
-      }
+      const extensions = axis === "horizontal"
+        ? [{ x: first.x - 1, y: first.y }, { x: last.x + 1, y: last.y }]
+        : [{ x: first.x, y: first.y - 1 }, { x: last.x, y: last.y + 1 }];
+      const hasLegalExtension = extensions.some((cell) => legal.has(cellKey(cell)));
+      for (const extension of extensions) add(extension);
+      if (hasLegalExtension) for (const cell of run) represented.add(cellKey(cell));
     };
 
     for (const run of maximalRuns(cluster, "horizontal")) addRunExtensions(run, "horizontal");
