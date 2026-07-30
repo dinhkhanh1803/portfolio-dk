@@ -149,10 +149,14 @@ test("AI receives only public board knowledge", async () => {
     new URL("../app/playground/neon-fleet/neon-fleet-game.tsx", import.meta.url),
     "utf8",
   );
+  const uiState = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-ui-state.ts", import.meta.url),
+    "utf8",
+  );
   const call = source.match(/chooseAiShot\(([\s\S]*?)\);/)?.[1] ?? "";
 
-  assert.match(source, /shots:\s*(?:match|current)\.player\.shots/);
-  assert.match(source, /remainingLengths:/);
+  assert.match(source, /buildAiKnowledge\(match\)/);
+  assert.match(uiState, /shots:\s*match\.player\.shots/);
   assert.ok(call, "chooseAiShot call is missing");
   assert.doesNotMatch(call, /\.ships|player/);
 });

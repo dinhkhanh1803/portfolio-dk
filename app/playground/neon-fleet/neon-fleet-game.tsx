@@ -47,6 +47,24 @@ import {
   safeWrite,
   type FleetStats,
 } from "./neon-fleet-storage";
+import {
+  attemptManualPlacement,
+  buildAiKnowledge,
+  buildTerminalMetrics,
+  claimTerminalWrite,
+  coordinateLabel,
+  createMatchClock,
+  createTerminalWriteGuard,
+  isEnemyCellActionable,
+  isShipSunk,
+  pauseMatchClock,
+  resetMatchClock,
+  resetTerminalWriteGuard,
+  resumeMatchClock,
+  startMatchClock,
+  type TerminalMetrics,
+} from "./neon-fleet-ui-state";
+
 import styles from "./neon-fleet.module.css";
 
 type Theme = "light" | "dark";
@@ -58,10 +76,6 @@ const cells = Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => ({
   y: Math.floor(index / BOARD_SIZE),
 }));
 
-const coordinates = ({ x, y }: Cell) => `${String.fromCharCode(65 + y)}${x + 1}`;
-const shotCount = (board: BoardState) => Object.keys(board.shots).length;
-const hitCount = (board: BoardState) => Object.values(board.shots).filter((shot) => shot !== "miss").length;
-const isSunk = (ship: BoardState["ships"][number]) => ship.hits.length >= ship.length;
 const isTerminalPhase = (phase: FleetMatch["phase"]) => phase === "victory" || phase === "defeat";
 const displayPhase = (phase: FleetMatch["phase"]) => ({
   setup: "Deployment",
@@ -76,7 +90,7 @@ function FleetReadout({ board, concealed = false }: { board: BoardState; conceal
     <div className={styles.fleetReadout} aria-label={concealed ? "Enemy remaining fleet" : "Your remaining fleet"}>
       {FLEET.map((definition) => {
         const ship = board.ships.find((item) => item.id === definition.id);
-        const sunk = Boolean(ship && isSunk(ship));
+        const sunk = Boolean(ship && isShipSunk(ship));
         return (
           <div key={definition.id} data-sunk={sunk || undefined}>
             <span aria-hidden="true">{Array.from({ length: definition.length }, (_, index) => <i key={index} />)}</span>
@@ -100,10 +114,13 @@ export default function NeonFleetGame() {
   const [theme, setTheme] = useState<Theme>("light");
   const [stats, setStats] = useState<FleetStats>(DEFAULT_STATS);
   const [eventLog, setEventLog] = useState<LogEntry[]>([]);
-  const [durationMs, setDurationMs] = useState(0);
+  const [announcement, setAnnouncement] = useState("Place your fleet to begin.");
+  const [missionReport, setMissionReport] = useState<TerminalMetrics | null>(null);
+  const [shotLocked, setShotLocked] = useState(false);
   const audioRef = useRef<ReturnType<typeof createFleetAudio> | null>(null);
-  const startedAtRef = useRef(0);
-  const recordedRef = useRef(false);
+  const clockRef = useRef(createMatchClock());
+  const terminalGuardRef = useRef(createTerminalWriteGuard());
+  const pausedRef = useRef(false);
   const shotLockedRef = useRef(false);
   const logIdRef = useRef(0);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -127,12 +144,21 @@ export default function NeonFleetGame() {
     await audio.unlock();
     audio.play(cue);
   }, []);
+  const setPauseState = useCallback((next: boolean, nowMs: number) => {
+    if (pausedRef.current === next) return;
+    pausedRef.current = next;
+    clockRef.current = next
+      ? pauseMatchClock(clockRef.current, nowMs)
+      : resumeMatchClock(clockRef.current, nowMs);
+    setPaused(next);
+  }, []);
 
   const resetGame = useCallback((nextDifficulty: Difficulty = difficulty) => {
     const seed = Date.now() >>> 0;
-    recordedRef.current = false;
+    terminalGuardRef.current = resetTerminalWriteGuard(terminalGuardRef.current);
+    clockRef.current = resetMatchClock();
+    pausedRef.current = false;
     shotLockedRef.current = false;
-    startedAtRef.current = 0;
     logIdRef.current = 0;
     setDifficulty(nextDifficulty);
     setMatch(createMatch(nextDifficulty, seed));
@@ -140,7 +166,9 @@ export default function NeonFleetGame() {
     setOrientation("horizontal");
     setPreviewOrigin(null);
     setPaused(false);
-    setDurationMs(0);
+    setShotLocked(false);
+    setMissionReport(null);
+    setAnnouncement("New deployment ready. Place all five ships.");
     setEventLog([]);
     void unlockAndPlay("click");
   }, [difficulty, unlockAndPlay]);
@@ -174,11 +202,11 @@ export default function NeonFleetGame() {
 
   useEffect(() => {
     const pauseWhenHidden = () => {
-      if (document.hidden && (match.phase === "playerTurn" || match.phase === "aiTurn")) setPaused(true);
+      if (document.hidden && (match.phase === "playerTurn" || match.phase === "aiTurn")) setPauseState(true, window.performance.now());
     };
     document.addEventListener("visibilitychange", pauseWhenHidden);
     return () => document.removeEventListener("visibilitychange", pauseWhenHidden);
-  }, [match.phase]);
+  }, [match.phase, setPauseState]);
 
   useEffect(() => {
     const rotateWithKeyboard = (event: KeyboardEvent) => {
@@ -196,15 +224,11 @@ export default function NeonFleetGame() {
     if (match.phase !== "aiTurn" || paused) return;
     audioRef.current?.play("radar");
     const timer = window.setTimeout(() => {
-      const knowledge = {
-        shots: match.player.shots,
-        remainingLengths: match.player.ships
-          .filter((ship) => !isSunk(ship))
-          .map((ship) => ship.length),
-      };
+      const knowledge = buildAiKnowledge(match);
       const choice = chooseAiShot(match.difficulty, knowledge, match.seed);
       if (!choice.cell) {
         shotLockedRef.current = false;
+        setShotLocked(false);
         setMatch({ ...match, phase: "playerTurn", seed: choice.seed, event: "Enemy scan exhausted" });
         appendLog(`T${match.turn}: Enemy scan - no legal target`);
         return;
@@ -214,11 +238,11 @@ export default function NeonFleetGame() {
       const result = next.player.shots[cellKey(choice.cell)];
       setMatch(next);
       shotLockedRef.current = false;
-      appendLog(`T${match.turn}: Enemy ${coordinates(choice.cell)} - ${result}`);
+      setShotLocked(false);
+      appendLog(`T${match.turn}: Enemy ${coordinateLabel(choice.cell)} - ${result}`);
       if (result) audioRef.current?.play(result);
       if (next.phase === "defeat") {
-        const elapsed = Math.max(1, window.performance.now() - startedAtRef.current);
-        setDurationMs(elapsed);
+        setMissionReport(buildTerminalMetrics(next, clockRef.current, window.performance.now()));
         audioRef.current?.play("defeat");
       }
     }, 600);
@@ -226,19 +250,18 @@ export default function NeonFleetGame() {
   }, [appendLog, match, paused]);
 
   useEffect(() => {
-    if (!isTerminalPhase(match.phase) || recordedRef.current) return;
-    recordedRef.current = true;
-    const shots = shotCount(match.enemy);
-    const hits = hitCount(match.enemy);
-    const elapsed = Math.max(1, durationMs || window.performance.now() - startedAtRef.current);
+    if (!isTerminalPhase(match.phase) || !missionReport) return;
+    const claim = claimTerminalWrite(terminalGuardRef.current, true);
+    terminalGuardRef.current = claim.guard;
+    if (!claim.shouldWrite) return;
     const next = recordMatch(stats, match.difficulty, {
       won: match.phase === "victory",
-      accuracy: shots ? hits / shots * 100 : 0,
-      durationMs: elapsed,
+      accuracy: missionReport.accuracy,
+      durationMs: Math.max(1, missionReport.durationMs),
     });
     setStats(next);
     safeWrite(STATS_KEY, JSON.stringify(next));
-  }, [durationMs, match, stats]);
+  }, [match, missionReport, stats]);
 
   useEffect(() => {
     if (!paused && !isTerminalPhase(match.phase)) return;
@@ -263,61 +286,72 @@ export default function NeonFleetGame() {
   const placeSelectedShip = (cell: Cell) => {
     if (match.phase !== "setup") return;
     const occupying = match.player.ships.find((ship) => ship.cells.some((part) => cellKey(part) === cellKey(cell)));
-    if (occupying) {
+    if (occupying?.id === selectedShip) {
       setMatch(removeShip(match, occupying.id));
       setSelectedShip(occupying.id);
+      setAnnouncement(`${occupying.name} removed. Select a new origin to place it again.`);
       void unlockAndPlay("click");
       return;
     }
-    const next = placeShip(match, selectedShip, cell, orientation);
-    if (next === match) return;
-    setMatch(next);
-    const nextUnplaced = FLEET.find((ship) => !next.player.ships.some((placed) => placed.id === ship.id));
+    const attempt = attemptManualPlacement(match, selectedShip, cell, orientation);
+    setAnnouncement(attempt.announcement);
+    if (!attempt.accepted) {
+      void unlockAndPlay("click");
+      return;
+    }
+    setMatch(attempt.match);
+    const nextUnplaced = FLEET.find((ship) => !attempt.match.player.ships.some((placed) => placed.id === ship.id));
     if (nextUnplaced) setSelectedShip(nextUnplaced.id);
     setPreviewOrigin(null);
     void unlockAndPlay("click");
   };
 
   const selectDockShip = (shipId: ShipId) => {
+    const definition = FLEET.find((ship) => ship.id === shipId);
     const placed = match.player.ships.some((ship) => ship.id === shipId);
     setMatch(placed ? removeShip(match, shipId) : match);
     setSelectedShip(shipId);
     setPreviewOrigin(null);
+    setAnnouncement(placed ? `${definition?.name ?? "Ship"} removed and selected.` : `${definition?.name ?? "Ship"} selected for placement.`);
     void unlockAndPlay("click");
   };
 
   const beginBattle = (startedAt: number) => {
     const next = startBattle(autoPlaceEnemy(match));
     if (next.phase !== "playerTurn") return;
-    recordedRef.current = false;
+    terminalGuardRef.current = resetTerminalWriteGuard(terminalGuardRef.current);
+    clockRef.current = startMatchClock(clockRef.current, startedAt);
+    pausedRef.current = false;
     shotLockedRef.current = false;
-    startedAtRef.current = startedAt;
     logIdRef.current = 0;
-    setDurationMs(0);
+    setShotLocked(false);
+    setMissionReport(null);
     setEventLog([]);
     setPaused(false);
     setPreviewOrigin(null);
     setMatch(next);
+    setAnnouncement("Battle started. Choose an untried enemy coordinate.");
     appendLog("T1: Fleet deployed - choose a target");
     void unlockAndPlay("click");
   };
 
   const playerFire = (cell: Cell, firedAt: number) => {
     const key = cellKey(cell);
-    if (paused || match.phase !== "playerTurn" || match.enemy.shots[key] || shotLockedRef.current) return;
+    if (!isEnemyCellActionable(match, cell, paused, shotLockedRef.current)) return;
     shotLockedRef.current = true;
+    setShotLocked(true);
     const next = firePlayerShot(match, cell);
     if (next === match) {
       shotLockedRef.current = false;
+      setShotLocked(false);
       return;
     }
     const result = next.enemy.shots[key];
     setMatch(next);
-    appendLog(`T${next.turn}: You ${coordinates(cell)} - ${result}`);
+    appendLog(`T${next.turn}: You ${coordinateLabel(cell)} - ${result}`);
     void unlockAndPlay(result);
     if (next.phase === "victory") {
-      const elapsed = Math.max(1, firedAt - startedAtRef.current);
-      setDurationMs(elapsed);
+      setMissionReport(buildTerminalMetrics(next, clockRef.current, firedAt));
       void unlockAndPlay("victory");
     }
   };
@@ -331,17 +365,25 @@ export default function NeonFleetGame() {
     if (!next) void unlockAndPlay("click");
   };
 
-  const togglePause = () => {
+  const togglePause = (nowMs: number) => {
     if (match.phase !== "playerTurn" && match.phase !== "aiTurn") return;
-    setPaused((current) => !current);
+    setPauseState(!pausedRef.current, nowMs);
     void unlockAndPlay("click");
   };
 
   const resetFleet = () => {
+    clockRef.current = resetMatchClock();
+    terminalGuardRef.current = resetTerminalWriteGuard(terminalGuardRef.current);
+    pausedRef.current = false;
+    shotLockedRef.current = false;
     setMatch(createMatch(difficulty, match.seed));
     setSelectedShip("carrier");
     setOrientation("horizontal");
     setPreviewOrigin(null);
+    setPaused(false);
+    setShotLocked(false);
+    setMissionReport(null);
+    setAnnouncement("Fleet reset. Place all five ships again.");
     setEventLog([]);
     void unlockAndPlay("click");
   };
@@ -349,7 +391,6 @@ export default function NeonFleetGame() {
   const renderBoard = (owner: BoardOwner) => {
     const board = match[owner];
     const enemy = owner === "enemy";
-    const canTarget = enemy && match.phase === "playerTurn" && !paused;
     const terminal = isTerminalPhase(match.phase);
     return (
       <div
@@ -371,7 +412,7 @@ export default function NeonFleetGame() {
           const revealShip = Boolean(ship && (!enemy || shot === "sunk" || terminal));
           const placement = !enemy && preview?.keys.has(key) ? (preview.valid ? "valid" : "invalid") : undefined;
           const interactiveSetupCell = !enemy && match.phase === "setup";
-          const disabled = enemy ? !canTarget || Boolean(shot) : !interactiveSetupCell;
+          const disabled = enemy ? !isEnemyCellActionable(match, cell, paused, shotLocked) : !interactiveSetupCell;
           return (
             <button
               type="button"
@@ -396,13 +437,12 @@ export default function NeonFleetGame() {
     );
   };
 
-  const playerShots = shotCount(match.enemy);
-  const playerHits = hitCount(match.enemy);
+  const playerShots = Object.keys(match.enemy.shots).length;
+  const playerHits = Object.values(match.enemy.shots).filter((shot) => shot !== "miss").length;
   const accuracy = playerShots ? Math.round(playerHits / playerShots * 100) : 0;
   const selectedDefinition = FLEET.find((ship) => ship.id === selectedShip) ?? FLEET[0];
   const combat = match.phase !== "setup";
   const terminal = isTerminalPhase(match.phase);
-  const elapsed = durationMs;
   const difficultyStats = stats.byDifficulty[match.difficulty];
 
   return (
@@ -414,7 +454,7 @@ export default function NeonFleetGame() {
           <span>{copy.lead}</span>
         </div>
         <div className={styles.actions}>
-          <button type="button" onClick={togglePause} disabled={!combat || terminal}>
+          <button type="button" onClick={(event) => togglePause(event.timeStamp)} disabled={!combat || terminal}>
             {paused ? <Play size={17} /> : <Pause size={17} />} {paused ? "Resume" : "Pause"}
           </button>
           <button type="button" onClick={toggleMute}>
@@ -462,7 +502,7 @@ export default function NeonFleetGame() {
               <button type="button" onClick={() => { setOrientation((current) => current === "horizontal" ? "vertical" : "horizontal"); void unlockAndPlay("click"); }}>
                 <RotateCw size={16} /> Rotate <kbd>R</kbd>
               </button>
-              <button type="button" onClick={() => { setMatch(autoPlaceFleet(match)); setPreviewOrigin(null); void unlockAndPlay("click"); }}>
+              <button type="button" onClick={() => { setMatch(autoPlaceFleet(match)); setPreviewOrigin(null); setAnnouncement("Fleet auto-placed. Review the board or start battle."); void unlockAndPlay("click"); }}>
                 <Anchor size={16} /> Auto-place
               </button>
               <button type="button" onClick={resetFleet}>Reset fleet</button>
@@ -496,25 +536,32 @@ export default function NeonFleetGame() {
           <div ref={dialogRef} className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="pause-title">
             <Anchor size={30} />
             <h2 id="pause-title">Operations paused</h2>
-            <p>Timers and enemy targeting are safely suspended.</p>
-            <button type="button" onClick={togglePause}><Play size={17} /> Resume</button>
+            <p>The active battle clock and enemy targeting are suspended. Paused time is excluded.</p>
+            <button type="button" onClick={(event) => togglePause(event.timeStamp)}><Play size={17} /> Resume</button>
           </div>
         )}
 
-        {terminal && (
+        {terminal && missionReport && (
           <div ref={dialogRef} className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="terminal-title">
             <Crosshair size={32} />
             <p>MISSION REPORT</p>
             <h2 id="terminal-title">{match.phase === "victory" ? "Victory" : "Defeat"}</h2>
             <div className={styles.report}>
-              <span><b>{playerShots}</b> shots</span><span><b>{playerHits}</b> hits</span><span><b>{accuracy}%</b> accuracy</span><span><b>{Math.ceil(elapsed / 1000)}s</b> duration</span>
+              <span><b>{missionReport.shots}</b> Shots</span>
+              <span><b>{missionReport.hits}</b> Hits</span>
+              <span><b>{missionReport.accuracy}%</b> Accuracy</span>
+              <span><b>{missionReport.yourShipsRemaining}</b> Your ships remaining</span>
+              <span><b>{missionReport.enemyShipsRemaining}</b> Enemy ships remaining</span>
+              <span><b>{Math.ceil(missionReport.durationMs / 1000)}s</b> Active duration</span>
             </div>
             <small>{difficultyStats.played} recorded / {difficultyStats.won} won / best {difficultyStats.bestAccuracy}%</small>
+            <small>Active battle duration excludes paused and hidden time.</small>
             <button type="button" onClick={() => resetGame()}><RefreshCw size={17} /> Rematch</button>
           </div>
         )}
 
         <p className={styles.srStatus} aria-live="polite">{paused ? "Game paused" : match.event}</p>
+        <p className={styles.srStatus} role="status" aria-live="assertive">{announcement}</p>
       </section>
     </main>
   );
