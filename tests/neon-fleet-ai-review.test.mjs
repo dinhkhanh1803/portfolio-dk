@@ -31,12 +31,23 @@ const scoresFor = (shots, lengths) => {
   return scores;
 };
 
-test("normal abandons target mode for a non-aligned hit cluster", () => {
-  const state = knowledge({ "4:4": "hit", "5:4": "hit", "4:5": "hit" });
-  assert.deepEqual(
-    chooseAiShot("normal", state, 1),
-    { cell: { x: 2, y: 2 }, seed: 1015568748 },
-  );
+test("targets extensions across perpendicular touching ships and independent hits", () => {
+  const state = knowledge({ "0:0": "hit", "1:0": "hit", "0:1": "hit", "9:9": "hit" });
+  const targets = new Set(["2:0", "0:2", "8:9", "9:8"]);
+  const touchingTargets = new Set(["2:0", "0:2"]);
+  const independentTargets = new Set(["8:9", "9:8"]);
+  const seeds = Array.from({ length: 40 }, (_, index) => Math.imul(index, 0x9e3779b1) >>> 0);
+
+  for (const difficulty of ["normal", "hard"]) {
+    const choices = seeds.map((seed) => chooseAiShot(difficulty, state, seed));
+    for (const result of choices) {
+      assert.ok(result.cell);
+      assert.ok(targets.has(cellKey(result.cell)), `${difficulty} selected ${cellKey(result.cell)}`);
+    }
+    const selected = new Set(choices.map(({ cell }) => cellKey(cell)));
+    assert.ok([...selected].some((key) => touchingTargets.has(key)), `${difficulty} missed touching cluster`);
+    assert.ok([...selected].some((key) => independentTargets.has(key)), `${difficulty} missed independent cluster`);
+  }
 });
 
 test("normalizes negative and overflow seeds consistently", () => {

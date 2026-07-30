@@ -92,22 +92,57 @@ export const targetCandidates = (knowledge: AiKnowledge): Cell[] => {
     if (legal.has(key)) candidates.set(key, cell);
   };
 
+  const maximalRuns = (cluster: Cell[], axis: "horizontal" | "vertical") => {
+    const lines = new Map<number, Cell[]>();
+    for (const cell of cluster) {
+      const lineKey = axis === "horizontal" ? cell.y : cell.x;
+      const line = lines.get(lineKey);
+      if (line) line.push(cell);
+      else lines.set(lineKey, [cell]);
+    }
+
+    const runs: Cell[][] = [];
+    for (const cells of lines.values()) {
+      const sorted = [...cells].sort((left, right) => (
+        axis === "horizontal" ? left.x - right.x : left.y - right.y
+      ));
+      let run = [sorted[0]];
+      for (const cell of sorted.slice(1)) {
+        const previous = run[run.length - 1];
+        const previousCoordinate = axis === "horizontal" ? previous.x : previous.y;
+        const coordinate = axis === "horizontal" ? cell.x : cell.y;
+        if (coordinate !== previousCoordinate + 1) {
+          if (run.length >= 2) runs.push(run);
+          run = [cell];
+        } else {
+          run.push(cell);
+        }
+      }
+      if (run.length >= 2) runs.push(run);
+    }
+    return runs;
+  };
+
   for (const cluster of unresolvedHitClusters(knowledge.shots)) {
-    const sameRow = cluster.length >= 2 && new Set(cluster.map((cell) => cell.y)).size === 1;
-    const sameColumn = cluster.length >= 2 && new Set(cluster.map((cell) => cell.x)).size === 1;
-    if (sameRow) {
-      const y = cluster[0].y;
-      const xs = cluster.map((cell) => cell.x);
-      add({ x: Math.min(...xs) - 1, y });
-      add({ x: Math.max(...xs) + 1, y });
-    } else if (sameColumn) {
-      const x = cluster[0].x;
-      const ys = cluster.map((cell) => cell.y);
-      add({ x, y: Math.min(...ys) - 1 });
-      add({ x, y: Math.max(...ys) + 1 });
-    } else {
-      if (cluster.length >= 2) return [];
-      for (const hit of cluster) for (const neighbor of orthogonalNeighbors(hit)) add(neighbor);
+    const represented = new Set<string>();
+    const addRunExtensions = (run: Cell[], axis: "horizontal" | "vertical") => {
+      for (const cell of run) represented.add(cellKey(cell));
+      const first = run[0];
+      const last = run[run.length - 1];
+      if (axis === "horizontal") {
+        add({ x: first.x - 1, y: first.y });
+        add({ x: last.x + 1, y: last.y });
+      } else {
+        add({ x: first.x, y: first.y - 1 });
+        add({ x: last.x, y: last.y + 1 });
+      }
+    };
+
+    for (const run of maximalRuns(cluster, "horizontal")) addRunExtensions(run, "horizontal");
+    for (const run of maximalRuns(cluster, "vertical")) addRunExtensions(run, "vertical");
+    for (const hit of cluster) {
+      if (represented.has(cellKey(hit))) continue;
+      for (const neighbor of orthogonalNeighbors(hit)) add(neighbor);
     }
   }
 
