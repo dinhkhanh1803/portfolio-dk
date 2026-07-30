@@ -106,6 +106,7 @@ export const targetCandidates = (knowledge: AiKnowledge): Cell[] => {
       add({ x, y: Math.min(...ys) - 1 });
       add({ x, y: Math.max(...ys) + 1 });
     } else {
+      if (cluster.length >= 2) return [];
       for (const hit of cluster) for (const neighbor of orthogonalNeighbors(hit)) add(neighbor);
     }
   }
