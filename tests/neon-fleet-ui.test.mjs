@@ -125,22 +125,33 @@ test("game UI exposes the complete setup, combat, accessibility, and adapter con
     new URL("../app/playground/neon-fleet/neon-fleet-game.tsx", import.meta.url),
     "utf8",
   );
+  const board = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-board.tsx", import.meta.url),
+    "utf8",
+  );
+  const dialog = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-dialog.tsx", import.meta.url),
+    "utf8",
+  );
+  const combined = `${source}\n${board}\n${dialog}`;
 
   for (const token of [
     "GAME 08", "Your Fleet", "Enemy Waters", "Auto-place", "Reset fleet", "Rotate",
     "Start battle", "Easy", "Normal", "Hard", "MutationObserver", "visibilitychange",
     "createFleetAudio", "chooseAiShot", "recordMatch", "safeRead", "safeWrite",
-    '"victory"', '"defeat"', 'role="grid"', 'role="gridcell"', "aria-live", "aria-modal",
+    '"victory"', '"defeat"', 'role="grid"', 'role="row"', 'role="gridcell"', "aria-live",
     "untried",
   ]) {
-    assert.ok(source.includes(token), `missing UI contract token: ${token}`);
+    assert.ok(combined.includes(token), `missing UI contract token: ${token}`);
   }
 
-  assert.match(source, /BOARD_SIZE\s*\*\s*BOARD_SIZE/);
-  assert.match(source, /String\.fromCharCode\(65\s*\+\s*cell\.y\)/);
+  assert.match(board, /Array\.from\(\{\s*length:\s*BOARD_SIZE\s*\}/);
+  assert.match(board, /nextGridIndex/);
+  assert.match(board, /tabIndex=/);
+  assert.match(board, /\.focus\(\)/);
   assert.match(source, /setTimeout\([\s\S]*?(?:500|600|650|700)/);
-  assert.doesNotMatch(source, /Directional controls|d-?pad/i);
-  assert.match(source, /match\.phase === "aiTurn" && !paused/);
+  assert.doesNotMatch(combined, /Directional controls|d-?pad/i);
+  assert.match(source, /shouldScheduleAi\(match,\s*paused\)/);
   assert.match(source, /toggleMute[\s\S]*?audioRef\.current\?\.unlock\(\)/);
 });
 
@@ -179,6 +190,7 @@ test("scoped styles provide responsive themes, focus, motion, and shot presentat
   );
 
   assert.match(source, /\.boards\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,/);
+  assert.match(source, /\.boardRow\s*\{[^}]*grid-template-columns:[^}]*\}\s*\.board button\s*\{/);
   assert.match(source, /@media\s*\(max-width:\s*760px\)/);
   assert.match(source, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(source, /--(?:water|fleet-water):/);
@@ -188,4 +200,51 @@ test("scoped styles provide responsive themes, focus, motion, and shot presentat
   assert.match(source, /\[data-shot=["']hit["']\]/);
   assert.match(source, /\[data-shot=["']sunk["']\]/);
   assert.match(source, /radar/i);
+});
+
+test("game timing uses only the monotonic helper and never React event timestamps", async () => {
+  const source = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-game.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /readMonotonicNow\(\)/);
+  assert.doesNotMatch(source, /\.timeStamp|Date\.now|performance\.now/);
+  assert.doesNotMatch(source, /beginBattle\s*=\s*\([^)]*(?:time|startedAt)/);
+  assert.doesNotMatch(source, /playerFire\s*=\s*\([^)]*(?:time|firedAt)/);
+  assert.doesNotMatch(source, /togglePause\s*=\s*\([^)]*(?:time|nowMs)/);
+});
+
+test("native dialog owns modality, Escape handling, focus, and restoration", async () => {
+  const source = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-dialog.tsx", import.meta.url),
+    "utf8",
+  );
+  const game = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-game.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /<dialog/);
+  assert.match(source, /\.showModal\(\)/);
+  assert.match(source, /\.close\(\)/);
+  assert.match(source, /onCancel=/);
+  assert.match(source, /preventDefault\(\)/);
+  assert.match(source, /querySelector[\s\S]*button/);
+  assert.match(source, /returnFocusTarget\?\.focus\(\)/);
+  assert.doesNotMatch(`${source}\n${game}`, /aria-modal/);
+  assert.match(game, /onEscape=\{[^}]*togglePause/);
+});
+
+test("placement selection clears and all rotation inputs share one announced handler", async () => {
+  const source = await readFile(
+    new URL("../app/playground/neon-fleet/neon-fleet-game.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /useState<ShipId\s*\|\s*null>/);
+  assert.match(source, /setSelectedShip\(null\)/);
+  assert.match(source, /rotatePlacement/);
+  assert.match(source, /aria-pressed=\{orientation\s*===\s*"vertical"\}/);
+  assert.match(source, /Orientation changed to/);
 });

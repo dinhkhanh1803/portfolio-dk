@@ -186,3 +186,65 @@ export const isEnemyCellActionable = (
   && !shotLocked
   && inBounds(cell)
   && !Object.hasOwn(match.enemy.shots, cellKey(cell));
+
+type MonotonicSource = { now: () => number | undefined };
+
+const fallbackMonotonicSource: MonotonicSource = { now: () => 0 };
+
+export const readMonotonicNow = (
+  source: MonotonicSource = typeof performance === "undefined" ? fallbackMonotonicSource : performance,
+) => {
+  const value = source.now();
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+};
+
+export const shouldScheduleAi = (match: FleetMatch, paused: boolean) =>
+  match.phase === "aiTurn" && !paused;
+
+export type GridNavigationKey = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" | "Home" | "End";
+
+export const nextGridIndex = (
+  currentIndex: number,
+  key: string,
+  actionable: readonly boolean[],
+): number => {
+  const total = BOARD_SIZE * BOARD_SIZE;
+  if (!Number.isInteger(currentIndex) || currentIndex < 0 || currentIndex >= total) return currentIndex;
+
+  const rowStart = Math.floor(currentIndex / BOARD_SIZE) * BOARD_SIZE;
+  const rowEnd = rowStart + BOARD_SIZE - 1;
+  let candidate: number;
+  let step: number;
+  let lowerBound = 0;
+  let upperBound = total - 1;
+
+  if (key === "ArrowLeft") {
+    candidate = currentIndex - 1;
+    step = -1;
+    lowerBound = rowStart;
+  } else if (key === "ArrowRight") {
+    candidate = currentIndex + 1;
+    step = 1;
+    upperBound = rowEnd;
+  } else if (key === "ArrowUp") {
+    candidate = currentIndex - BOARD_SIZE;
+    step = -BOARD_SIZE;
+  } else if (key === "ArrowDown") {
+    candidate = currentIndex + BOARD_SIZE;
+    step = BOARD_SIZE;
+  } else if (key === "Home") {
+    candidate = rowStart;
+    step = 1;
+    upperBound = rowEnd;
+  } else if (key === "End") {
+    candidate = rowEnd;
+    step = -1;
+    lowerBound = rowStart;
+  } else return currentIndex;
+
+  while (candidate >= lowerBound && candidate <= upperBound) {
+    if (actionable[candidate]) return candidate;
+    candidate += step;
+  }
+  return currentIndex;
+};
