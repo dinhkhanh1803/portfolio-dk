@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { BOARD_SIZE, cellKey, type BoardState, type Cell } from "./neon-fleet-data";
-import { coordinateLabel, nextGridIndex } from "./neon-fleet-ui-state";
+import { coordinateLabel, nearestActionableIndex, nextGridIndex } from "./neon-fleet-ui-state";
 import styles from "./neon-fleet.module.css";
 
 type PlacementPreview = { valid: boolean; keys: Set<string> } | null;
@@ -45,7 +45,25 @@ export function NeonFleetBoard({
   const actionable = cells.map((cell) => active && isCellActionable(cell));
   const [rovingIndex, setRovingIndex] = useState(() => actionable.findIndex(Boolean));
   const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const resolvedRovingIndex = rovingIndex >= 0 && actionable[rovingIndex] ? rovingIndex : actionable.findIndex(Boolean);
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const gridOwnsFocusRef = useRef(false);
+  const shouldRestoreFocusRef = useRef(false);
+  const wasActiveRef = useRef(active);
+  const resolvedRovingIndex = nearestActionableIndex(rovingIndex, actionable);
+
+  useLayoutEffect(() => {
+    if (!active) {
+      if (wasActiveRef.current && gridOwnsFocusRef.current) shouldRestoreFocusRef.current = true;
+    } else if (
+      resolvedRovingIndex >= 0
+      && gridOwnsFocusRef.current
+      && (shouldRestoreFocusRef.current || rovingIndex !== resolvedRovingIndex)
+    ) {
+      shouldRestoreFocusRef.current = false;
+      cellRefs.current[resolvedRovingIndex]?.focus();
+    }
+    wasActiveRef.current = active;
+  }, [active, resolvedRovingIndex, rovingIndex]);
 
   const moveFocus = (index: number, event: KeyboardEvent<HTMLButtonElement>) => {
     if (!navigationKeys.has(event.key)) return;
@@ -58,11 +76,17 @@ export function NeonFleetBoard({
 
   return (
     <div
+      ref={boardRef}
       className={`${styles.board} ${radarActive ? styles.radarActive : ""}`}
       role="grid"
       aria-label={label}
       aria-rowcount={BOARD_SIZE}
       aria-colcount={BOARD_SIZE}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          gridOwnsFocusRef.current = false;
+        }
+      }}
       onMouseLeave={onMouseLeave}
       onContextMenu={(event) => {
         if (!onRotate) return;
@@ -96,6 +120,7 @@ export function NeonFleetBoard({
                 aria-label={`${enemy ? "Enemy" : "Your"} ${coordinateLabel(cell)}, ${shot ?? (revealShip ? "ship" : "untried")}`}
                 onMouseEnter={() => canAct && onCellFocus?.(cell)}
                 onFocus={() => {
+                  gridOwnsFocusRef.current = true;
                   setRovingIndex(index);
                   if (canAct) onCellFocus?.(cell);
                 }}

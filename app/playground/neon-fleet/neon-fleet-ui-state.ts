@@ -248,3 +248,21 @@ export const nextGridIndex = (
   }
   return currentIndex;
 };
+
+export const nearestActionableIndex = (
+  currentIndex: number,
+  actionable: readonly boolean[],
+): number => {
+  if (!actionable.some(Boolean)) return -1;
+  const lastIndex = actionable.length - 1;
+  const origin = Number.isInteger(currentIndex) ? Math.min(lastIndex, Math.max(0, currentIndex)) : 0;
+  if (actionable[origin]) return origin;
+
+  for (let distance = 1; distance <= lastIndex; distance += 1) {
+    const next = origin + distance;
+    if (next <= lastIndex && actionable[next]) return next;
+    const previous = origin - distance;
+    if (previous >= 0 && actionable[previous]) return previous;
+  }
+  return -1;
+};

@@ -71,6 +71,16 @@ import {
 import styles from "./neon-fleet.module.css";
 
 type Theme = "light" | "dark";
+
+const readDocumentTheme = (): Theme => {
+  if (typeof document === "undefined") return "light";
+  const root = document.documentElement;
+  if (root.dataset.theme === "dark" || root.classList.contains("dark")) return "dark";
+  if (root.dataset.theme === "light" || root.classList.contains("light")) return "light";
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
 type LogEntry = { id: number; text: string };
 
 const isTerminalPhase = (phase: FleetMatch["phase"]) => phase === "victory" || phase === "defeat";
@@ -108,7 +118,7 @@ export default function NeonFleetGame() {
   const [previewOrigin, setPreviewOrigin] = useState<Cell | null>(null);
   const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(readDocumentTheme);
   const [stats, setStats] = useState<FleetStats>(DEFAULT_STATS);
   const [eventLog, setEventLog] = useState<LogEntry[]>([]);
   const [announcement, setAnnouncement] = useState("Place your fleet to begin.");
@@ -187,10 +197,7 @@ export default function NeonFleetGame() {
     audioRef.current = createFleetAudio();
     const storedStats = parseStats(safeRead(STATS_KEY));
     const storedMute = safeRead(MUTE_KEY) === "true";
-    const readTheme = () => {
-      const root = document.documentElement;
-      setTheme(root.dataset.theme === "dark" || root.classList.contains("dark") ? "dark" : "light");
-    };
+    const readTheme = () => setTheme(readDocumentTheme());
     audioRef.current.setMuted(storedMute);
     const hydrateTimer = window.setTimeout(() => {
       setStats(storedStats);
@@ -409,7 +416,7 @@ export default function NeonFleetGame() {
   const difficultyStats = stats.byDifficulty[match.difficulty];
 
   return (
-    <main className={`${styles.page} ${theme === "dark" ? styles.dark : styles.light}`}>
+    <main suppressHydrationWarning className={`${styles.page} ${theme === "dark" ? styles.dark : styles.light}`}>
       <header className={styles.hero}>
         <div>
           <p>{copy.eyebrow}</p>

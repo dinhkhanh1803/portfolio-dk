@@ -16,6 +16,7 @@ import {
   elapsedMatchMs,
   isEnemyCellActionable,
   nextGridIndex,
+  nearestActionableIndex,
   pauseMatchClock,
   readMonotonicNow,
   resetMatchClock,
@@ -202,4 +203,16 @@ test("grid navigation stays bounded and skips unavailable cells", () => {
   assert.equal(nextGridIndex(12, "Home", available), 10);
   assert.equal(nextGridIndex(12, "End", available), 18);
   assert.equal(nextGridIndex(5, "Enter", available), 5);
+});
+
+test("nearest actionable index preserves position and prefers the next cell on a tie", () => {
+  const available = Array.from({ length: 100 }, () => false);
+  available[43] = true;
+  available[45] = true;
+  available[98] = true;
+
+  assert.equal(nearestActionableIndex(44, available), 45);
+  assert.equal(nearestActionableIndex(99, available), 98);
+  assert.equal(nearestActionableIndex(45, available), 45);
+  assert.equal(nearestActionableIndex(44, Array.from({ length: 100 }, () => false)), -1);
 });
