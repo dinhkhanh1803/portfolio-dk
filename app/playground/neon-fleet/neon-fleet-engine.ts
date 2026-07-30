@@ -142,7 +142,7 @@ export const autoPlaceEnemy = (match: FleetMatch): FleetMatch => {
   return { ...mirrored, player: match.player, enemy: mirrored.player };
 };
 
-const hasCompleteValidFleet = (board: BoardState) => {
+const isValidFleet = (board: BoardState, { requirePristine }: { requirePristine: boolean }) => {
   if (board.ships.length !== FLEET.length) return false;
 
   const occupied = new Set<string>();
@@ -154,12 +154,15 @@ const hasCompleteValidFleet = (board: BoardState) => {
     if (
       ship.name !== definition.name
       || ship.length !== definition.length
-      || ship.hits.length !== 0
       || ship.cells.length !== definition.length
+      || (requirePristine && ship.hits.length !== 0)
+      || (ship.orientation !== "horizontal" && ship.orientation !== "vertical")
     ) return false;
 
     const expectedCells = cellsFor(ship.cells[0], definition.length, ship.orientation);
-    if (!ship.cells.every((cell, index) => isInBounds(cell) && cellKey(cell) === cellKey(expectedCells[index]))) return false;
+    if (!ship.cells.every((cell, index) => (
+      isInBounds(cell) && cellKey(cell) === cellKey(expectedCells[index])
+    ))) return false;
 
     for (const cell of ship.cells) {
       const key = cellKey(cell);
@@ -172,16 +175,25 @@ const hasCompleteValidFleet = (board: BoardState) => {
 };
 
 export const startBattle = (match: FleetMatch): FleetMatch =>
-  match.phase === "setup" && hasCompleteValidFleet(match.player) && hasCompleteValidFleet(match.enemy)
+  match.phase === "setup"
+    && isValidFleet(match.player, { requirePristine: true })
+    && isValidFleet(match.enemy, { requirePristine: true })
     ? { ...match, phase: "playerTurn", event: "Your turn" }
     : match;
 
+const normalizedShipHits = (ship: BoardState["ships"][number]) => {
+  const actualCells = new Set(ship.cells.map(cellKey));
+  const hits = new Set(ship.hits.filter((key) => typeof key === "string"));
+  return [...actualCells].filter((key) => hits.has(key));
+};
+
+const isShipSunk = (ship: BoardState["ships"][number]) => {
+  const hits = new Set(normalizedShipHits(ship));
+  return ship.cells.length > 0 && ship.cells.every((cell) => hits.has(cellKey(cell)));
+};
+
 const allSunk = (board: BoardState) =>
-  board.ships.length === FLEET.length
-  && FLEET.every((definition) => {
-    const ships = board.ships.filter((ship) => ship.id === definition.id);
-    return ships.length === 1 && ships[0].length === definition.length && ships[0].hits.length === ships[0].length;
-  });
+  isValidFleet(board, { requirePristine: false }) && board.ships.every(isShipSunk);
 
 const fireAtBoard = (board: BoardState, cell: Cell) => {
   if (!isInBounds(cell)) return null;
@@ -190,13 +202,15 @@ const fireAtBoard = (board: BoardState, cell: Cell) => {
   if (Object.hasOwn(board.shots, key)) return null;
 
   const ship = board.ships.find((candidate) => candidate.cells.some((part) => cellKey(part) === key));
-  const ships = ship
-    ? board.ships.map((candidate) => candidate.id === ship.id
-      ? { ...candidate, hits: candidate.hits.includes(key) ? candidate.hits : [...candidate.hits, key] }
-      : candidate)
-    : board.ships;
-  const updatedShip = ships.find((candidate) => candidate.id === ship?.id);
-  const result: ShotResult = !ship ? "miss" : updatedShip?.hits.length === updatedShip?.length ? "sunk" : "hit";
+  let updatedShip: BoardState["ships"][number] | undefined;
+  const ships = board.ships.map((candidate) => {
+    if (candidate !== ship) return candidate;
+
+    const hits = normalizedShipHits(candidate);
+    updatedShip = { ...candidate, hits: hits.includes(key) ? hits : [...hits, key] };
+    return updatedShip;
+  });
+  const result: ShotResult = !updatedShip ? "miss" : isShipSunk(updatedShip) ? "sunk" : "hit";
 
   return { board: { ships, shots: { ...board.shots, [key]: result } }, result };
 };

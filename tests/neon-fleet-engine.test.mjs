@@ -197,3 +197,80 @@ test("awards defeat when the AI hits the player's last unsunk fleet cell", () =>
   assert.equal(shot.phase, "defeat");
   assert.equal(shot.turn, match.turn);
 });
+
+test("rejects battle starts outside setup and with malformed five-ship fleets", () => {
+  const ready = autoPlaceEnemy(autoPlaceFleet(createMatch()));
+  const wrongPhase = { ...ready, phase: "playerTurn" };
+  const overlapping = {
+    ...ready,
+    enemy: {
+      ...ready.enemy,
+      ships: ready.enemy.ships.map((ship, index) => index === 0
+        ? { ...ship, cells: [...ship.cells.slice(0, -1), ready.enemy.ships[1].cells[0]] }
+        : ship),
+    },
+  };
+
+  assert.equal(startBattle(wrongPhase), wrongPhase);
+  assert.equal(startBattle(overlapping), overlapping);
+});
+
+test("rejects player shots outside the player's turn by reference", () => {
+  const setup = autoPlaceEnemy(autoPlaceFleet(createMatch()));
+  assert.equal(firePlayerShot(setup, { x: 0, y: 0 }), setup);
+});
+
+test("does not sink ships from duplicate or arbitrary hit keys", () => {
+  const ready = battleReady();
+  const carrier = ready.enemy.ships.find((ship) => ship.id === "carrier");
+  const target = carrier.cells.at(-1);
+  const match = {
+    ...ready,
+    enemy: {
+      ...ready.enemy,
+      ships: ready.enemy.ships.map((ship) => ship.id === carrier.id
+        ? { ...ship, hits: Array.from({ length: ship.length - 1 }, () => cellKey(ship.cells[0])) }
+        : ship),
+    },
+  };
+  const shot = firePlayerShot(match, target);
+  const updatedCarrier = shot.enemy.ships.find((ship) => ship.id === carrier.id);
+
+  assert.equal(shot.enemy.shots[cellKey(target)], "hit");
+  assert.deepEqual(updatedCarrier.hits, [cellKey(carrier.cells[0]), cellKey(target)]);
+});
+
+test("does not award victory from arbitrary hit keys", () => {
+  const ready = battleReady();
+  const target = ready.enemy.ships[0].cells[0];
+  const match = {
+    ...ready,
+    enemy: {
+      ...ready.enemy,
+      ships: ready.enemy.ships.map((ship, index) => ({
+        ...ship,
+        hits: Array.from({ length: ship.length - (index === 0 ? 1 : 0) }, () => "forged"),
+      })),
+    },
+  };
+  const shot = firePlayerShot(match, target);
+
+  assert.equal(shot.phase, "aiTurn");
+  assert.equal(shot.enemy.shots[cellKey(target)], "hit");
+});
+
+test("does not award victory from a malformed fleet with every cell hit", () => {
+  const ready = battleReady();
+  const enemy = {
+    ...ready.enemy,
+    ships: ready.enemy.ships.map((ship, index) => index === 0
+      ? { ...ship, cells: [...ship.cells].reverse() }
+      : ship),
+  };
+  const target = enemy.ships[0].cells[0];
+  const match = { ...ready, enemy: withAllButOneFleetCellHit(enemy, target) };
+  const shot = firePlayerShot(match, target);
+
+  assert.equal(shot.enemy.shots[cellKey(target)], "sunk");
+  assert.equal(shot.phase, "aiTurn");
+});
