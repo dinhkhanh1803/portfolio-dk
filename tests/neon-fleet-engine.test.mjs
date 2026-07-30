@@ -274,3 +274,45 @@ test("does not award victory from a malformed fleet with every cell hit", () => 
   assert.equal(shot.enemy.shots[cellKey(target)], "sunk");
   assert.equal(shot.phase, "aiTurn");
 });
+
+test("requires pristine shot maps to start a battle", () => {
+  const ready = autoPlaceEnemy(autoPlaceFleet(createMatch()));
+  const playerShots = {
+    ...ready,
+    player: { ...ready.player, shots: { [cellKey({ x: 0, y: 0 })]: "miss" } },
+  };
+  const enemyShots = {
+    ...ready,
+    enemy: { ...ready.enemy, shots: { [cellKey({ x: 0, y: 0 })]: "miss" } },
+  };
+
+  assert.equal(startBattle(playerShots), playerShots);
+  assert.equal(startBattle(enemyShots), enemyShots);
+});
+
+test("relabels every hit cell when a ship is sunk without changing unrelated shots", () => {
+  const ready = battleReady();
+  const destroyer = ready.enemy.ships.find((ship) => ship.id === "destroyer");
+  const unrelatedHit = ready.enemy.ships.find((ship) => ship.id === "carrier").cells[0];
+  const unrelatedMiss = emptyCell(ready.enemy);
+  const hit = firePlayerShot(ready, unrelatedHit);
+  const miss = firePlayerShot({ ...hit, phase: "playerTurn" }, unrelatedMiss);
+  const firstDestroyerHit = firePlayerShot({ ...miss, phase: "playerTurn" }, destroyer.cells[0]);
+  const sunk = firePlayerShot({ ...firstDestroyerHit, phase: "playerTurn" }, destroyer.cells[1]);
+
+  assert.ok(destroyer.cells.every((cell) => sunk.enemy.shots[cellKey(cell)] === "sunk"));
+  assert.equal(sunk.enemy.shots[cellKey(unrelatedHit)], "hit");
+  assert.equal(sunk.enemy.shots[cellKey(unrelatedMiss)], "miss");
+});
+
+test("rejects both players' shots after victory or defeat by reference", () => {
+  const ready = battleReady();
+  const victory = { ...ready, phase: "victory" };
+  const defeat = { ...ready, phase: "defeat" };
+  const cell = { x: 0, y: 0 };
+
+  assert.equal(firePlayerShot(victory, cell), victory);
+  assert.equal(fireAiShot(victory, cell), victory);
+  assert.equal(firePlayerShot(defeat, cell), defeat);
+  assert.equal(fireAiShot(defeat, cell), defeat);
+});

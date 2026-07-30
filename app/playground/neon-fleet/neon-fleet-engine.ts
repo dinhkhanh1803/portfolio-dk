@@ -144,6 +144,7 @@ export const autoPlaceEnemy = (match: FleetMatch): FleetMatch => {
 
 const isValidFleet = (board: BoardState, { requirePristine }: { requirePristine: boolean }) => {
   if (board.ships.length !== FLEET.length) return false;
+  if (requirePristine && Object.keys(board.shots).length !== 0) return false;
 
   const occupied = new Set<string>();
   for (const definition of FLEET) {
@@ -212,7 +213,11 @@ const fireAtBoard = (board: BoardState, cell: Cell) => {
   });
   const result: ShotResult = !updatedShip ? "miss" : isShipSunk(updatedShip) ? "sunk" : "hit";
 
-  return { board: { ships, shots: { ...board.shots, [key]: result } }, result };
+  const shots: Record<string, ShotResult> = { ...board.shots, [key]: result };
+  if (updatedShip && result === "sunk") {
+    for (const hit of normalizedShipHits(updatedShip)) shots[hit] = "sunk";
+  }
+  return { board: { ships, shots }, result };
 };
 
 export const firePlayerShot = (match: FleetMatch, cell: Cell): FleetMatch => {
