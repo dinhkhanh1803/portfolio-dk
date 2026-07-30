@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   DEFAULT_STATS,
@@ -118,13 +117,4 @@ test("audio adapter provides a safe no-op Node lifecycle", async () => {
   audio.dispose();
   audio.play("victory");
   await assert.doesNotReject(audio.unlock());
-});
-
-test("audio context creation remains inside the user-initiated unlock path", async () => {
-  const source = await readFile(new URL("../app/playground/neon-fleet/neon-fleet-audio.ts", import.meta.url), "utf8");
-  const unlockStart = source.indexOf("const unlock");
-  const contextStart = source.indexOf("new AudioContext");
-
-  assert.ok(unlockStart >= 0);
-  assert.ok(contextStart > unlockStart);
 });

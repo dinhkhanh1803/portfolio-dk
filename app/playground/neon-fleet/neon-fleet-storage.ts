@@ -64,12 +64,19 @@ const isFleetStats = (value: unknown): value is FleetStats => {
     && DIFFICULTIES.every((difficulty) => isDifficultyStats(stats.byDifficulty[difficulty]));
 };
 
+const copyDifficulty = (stats: DifficultyStats): DifficultyStats => ({
+  played: stats.played,
+  won: stats.won,
+  bestAccuracy: stats.bestAccuracy,
+  fastestVictoryMs: stats.fastestVictoryMs,
+});
+
 const copyStats = (stats: FleetStats): FleetStats => ({
   version: 1,
   byDifficulty: {
-    easy: { ...stats.byDifficulty.easy },
-    normal: { ...stats.byDifficulty.normal },
-    hard: { ...stats.byDifficulty.hard },
+    easy: copyDifficulty(stats.byDifficulty.easy),
+    normal: copyDifficulty(stats.byDifficulty.normal),
+    hard: copyDifficulty(stats.byDifficulty.hard),
   },
 });
 
@@ -107,18 +114,20 @@ export const recordMatch = (
 
   const current = stats.byDifficulty[difficulty];
   const duration = result.won && result.durationMs > 0 ? result.durationMs : null;
+  const updated = {
+    played: current.played + 1,
+    won: current.won + (result.won ? 1 : 0),
+    bestAccuracy: Math.max(current.bestAccuracy, boundedAccuracy(result.accuracy)),
+    fastestVictoryMs: duration === null
+      ? current.fastestVictoryMs
+      : Math.min(current.fastestVictoryMs ?? duration, duration),
+  };
   return {
-    ...copyStats(stats),
+    version: 1,
     byDifficulty: {
-      ...copyStats(stats).byDifficulty,
-      [difficulty]: {
-        played: current.played + 1,
-        won: current.won + (result.won ? 1 : 0),
-        bestAccuracy: Math.max(current.bestAccuracy, boundedAccuracy(result.accuracy)),
-        fastestVictoryMs: duration === null
-          ? current.fastestVictoryMs
-          : Math.min(current.fastestVictoryMs ?? duration, duration),
-      },
+      easy: difficulty === "easy" ? updated : stats.byDifficulty.easy,
+      normal: difficulty === "normal" ? updated : stats.byDifficulty.normal,
+      hard: difficulty === "hard" ? updated : stats.byDifficulty.hard,
     },
   };
 };
