@@ -33,7 +33,15 @@ const createDefaultStats = (): FleetStats => ({
   },
 });
 
-export const DEFAULT_STATS: FleetStats = createDefaultStats();
+const freezeStats = (stats: FleetStats): FleetStats => {
+  Object.freeze(stats.byDifficulty.easy);
+  Object.freeze(stats.byDifficulty.normal);
+  Object.freeze(stats.byDifficulty.hard);
+  Object.freeze(stats.byDifficulty);
+  return Object.freeze(stats);
+};
+
+export const DEFAULT_STATS: FleetStats = freezeStats(createDefaultStats());
 
 const isDifficulty = (value: unknown): value is Difficulty =>
   typeof value === "string" && DIFFICULTIES.includes(value as Difficulty);
@@ -41,18 +49,18 @@ const isDifficulty = (value: unknown): value is Difficulty =>
 const isDifficultyStats = (value: unknown): value is DifficultyStats => {
   if (!value || typeof value !== "object") return false;
   const stats = value as DifficultyStats;
-  return Number.isFinite(stats.played)
-    && Number.isInteger(stats.played)
+  return Number.isSafeInteger(stats.played)
     && stats.played >= 0
-    && Number.isFinite(stats.won)
-    && Number.isInteger(stats.won)
+    && Number.isSafeInteger(stats.won)
     && stats.won >= 0
     && stats.won <= stats.played
     && Number.isFinite(stats.bestAccuracy)
     && stats.bestAccuracy >= 0
     && stats.bestAccuracy <= 100
-    && (stats.fastestVictoryMs === null
-      || (Number.isFinite(stats.fastestVictoryMs) && stats.fastestVictoryMs > 0));
+    && (stats.played !== 0 || (stats.won === 0 && stats.bestAccuracy === 0 && stats.fastestVictoryMs === null))
+    && (stats.won === 0
+      ? stats.fastestVictoryMs === null
+      : typeof stats.fastestVictoryMs === "number" && Number.isFinite(stats.fastestVictoryMs) && stats.fastestVictoryMs > 0);
 };
 
 const isFleetStats = (value: unknown): value is FleetStats => {
@@ -100,7 +108,8 @@ const isMatchResult = (value: unknown): value is MatchResult => {
   const result = value as MatchResult;
   return typeof result.won === "boolean"
     && Number.isFinite(result.accuracy)
-    && Number.isFinite(result.durationMs);
+    && Number.isFinite(result.durationMs)
+    && (!result.won || result.durationMs > 0);
 };
 
 const boundedAccuracy = (accuracy: number) => Math.min(100, Math.max(0, Math.round(accuracy)));
@@ -113,7 +122,7 @@ export const recordMatch = (
   if (!isFleetStats(stats) || !isDifficulty(difficulty) || !isMatchResult(result)) return stats;
 
   const current = stats.byDifficulty[difficulty];
-  const duration = result.won && result.durationMs > 0 ? result.durationMs : null;
+  const duration = result.won ? result.durationMs : null;
   const updated = {
     played: current.played + 1,
     won: current.won + (result.won ? 1 : 0),
