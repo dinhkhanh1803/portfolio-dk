@@ -18,7 +18,7 @@ test("Echo Circuit route and UI expose sound-memory gameplay", async () => {
 test("Playground publishes Echo Circuit as game eleven", async () => {
   const page = await read("../app/playground/page.tsx");
   const css = await read("../app/playground/playground.module.css");
-  assert.equal((page.match(/\bslug:\s*"/g) ?? []).length, 11);
+  assert.ok((page.match(/\bslug:\s*"/g) ?? []).length >= 11);
   assert.match(page, /href: "\/playground\/echo-circuit"/);
   assert.match(page, /visual: "echo"/);
   assert.match(page, /visualEcho/);

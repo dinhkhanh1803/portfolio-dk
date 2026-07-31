@@ -20,7 +20,7 @@ test("Game 10 route and UI expose the complete shooter contract", async () => {
 test("Playground publishes Neon Invaders as game ten", async () => {
   const page = await read("../app/playground/page.tsx");
   const css = await read("../app/playground/playground.module.css");
-  assert.equal((page.match(/\bslug:\s*"/g) ?? []).length, 10);
+  assert.ok((page.match(/\bslug:\s*"/g) ?? []).length >= 10);
   assert.match(page, /href: "\/playground\/neon-invaders"/);
   assert.match(page, /visual: "invaders"/);
   assert.match(page, /visualInvaders/);

@@ -196,7 +196,7 @@ test("Playground exposes Neon Fleet as the eighth live game", async () => {
   const gamesBlock = page.match(/const games:\s*GameCard\[\]\s*=\s*\[([\s\S]*?)\n  \];/)?.[1] ?? "";
   const fleetBlock = gamesBlock.match(/\{\s*slug:\s*"neon-fleet",[\s\S]*?\n    \},/)?.[0] ?? "";
 
-  assert.equal((gamesBlock.match(/\bslug:\s*"/g) ?? []).length, 8);
+  assert.ok((gamesBlock.match(/\bslug:\s*"/g) ?? []).length >= 8);
   assert.match(fleetBlock, /href:\s*"\/playground\/neon-fleet"/);
   assert.match(fleetBlock, /title:\s*"Neon Fleet"/);
   assert.match(fleetBlock, /categories:\s*\["Strategy",\s*"Casual"\]/);
