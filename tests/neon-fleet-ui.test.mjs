@@ -183,6 +183,22 @@ test("route mounts Neon Fleet with useful metadata", async () => {
   assert.match(source, /<NeonFleetGame\s*\/>/);
 });
 
+test("Playground exposes Neon Fleet as the eighth live game", async () => {
+  const page = await readFile(
+    new URL("../app/playground/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/playground/playground.module.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(page, /\/playground\/neon-fleet/);
+  assert.match(page, /Neon Fleet/);
+  assert.match(page, /visual:\s*"fleet"/);
+  assert.match(css, /\.visualFleet/);
+});
+
 test("scoped styles provide responsive themes, focus, motion, and shot presentation", async () => {
   const source = await readFile(
     new URL("../app/playground/neon-fleet/neon-fleet.module.css", import.meta.url),

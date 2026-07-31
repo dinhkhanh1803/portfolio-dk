@@ -610,3 +610,102 @@
 .serpentTailOne{left:45px;bottom:38px}.serpentTailTwo{left:72px;bottom:38px}.serpentTailThree{left:99px;bottom:38px}.serpentPreview .serpentHead{left:126px;bottom:38px;background:#aafff4;color:#08383a;font-style:normal;font-weight:900;text-align:center;line-height:20px}
 .serpentPreview .serpentCore{right:42px;top:42px;width:18px;height:18px;border-radius:50%;background:#ffca59;box-shadow:0 0 18px #ffca59}
 .serpentPreview .serpentObstacle{left:82px;top:35px;width:78px;height:18px;background:#29434b;box-shadow:none}
+
+.fleetVisual {
+  background:
+    linear-gradient(rgba(53, 215, 203, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(53, 215, 203, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at 76% 25%, rgba(255, 113, 136, 0.16), transparent 22%),
+    radial-gradient(circle at 44% 54%, rgba(53, 215, 203, 0.18), transparent 58%),
+    #06151c;
+  background-size: 20px 20px, 20px 20px, auto, auto, auto;
+}
+
+.fleetVisual::after {
+  width: 80%;
+  aspect-ratio: 3 / 2;
+  border-color: rgba(127, 241, 231, 0.16);
+  border-radius: 18px;
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, 0.28),
+    inset 0 0 38px rgba(53, 215, 203, 0.06);
+}
+
+.visualFleet {
+  width: min(74%, 270px);
+  aspect-ratio: 3 / 2;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border: 1px solid rgba(127, 241, 231, 0.24);
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 18px,
+      rgba(80, 220, 210, 0.12) 19px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      rgba(80, 220, 210, 0.12) 19px
+    ),
+    rgba(2, 12, 17, 0.76);
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.32),
+    inset 0 0 35px rgba(47, 200, 200, 0.08);
+}
+
+.visualFleet::before {
+  content: "A  B  C  D  E";
+  position: absolute;
+  top: 8px;
+  left: 13px;
+  color: rgba(201, 255, 251, 0.48);
+  font: 900 8px var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.36em;
+}
+
+.visualFleet::after {
+  content: "";
+  width: 42%;
+  height: 180%;
+  position: absolute;
+  top: -45%;
+  left: -50%;
+  background: linear-gradient(90deg, transparent, rgba(114, 250, 240, 0.15), transparent);
+  transform: rotate(18deg);
+  animation: fleetSweep 3.2s ease-in-out infinite;
+}
+
+.visualFleet span {
+  height: 14px;
+  position: absolute;
+  z-index: 1;
+  border: 1px solid rgba(201, 255, 251, 0.5);
+  border-radius: 999px 5px 5px 999px;
+  background: linear-gradient(90deg, #35d7cb, #7ff1e7);
+  box-shadow: 0 0 18px rgba(53, 215, 203, 0.42);
+  transform: rotate(-5deg);
+}
+
+.visualFleet span:nth-child(1) { width: 46%; left: 8%; top: 25%; }
+.visualFleet span:nth-child(2) { width: 34%; right: 8%; top: 50%; transform: rotate(3deg); }
+.visualFleet span:nth-child(3) { width: 24%; left: 24%; bottom: 16%; transform: rotate(0); }
+
+.visualFleet i {
+  width: 54px;
+  aspect-ratio: 1;
+  position: absolute;
+  right: 10%;
+  top: 8%;
+  z-index: 2;
+  border: 2px solid #ff7188;
+  border-radius: 50%;
+  box-shadow:
+    0 0 20px rgba(255, 113, 136, 0.72),
+    inset 0 0 16px rgba(255, 113, 136, 0.12);
+}
+
+.visualFleet i::before,
+.visualFleet i::after { content: ""; position: absolute; background: #ff7188; }
