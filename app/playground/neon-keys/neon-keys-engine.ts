@@ -1,3 +1,5 @@
+import { getPianoSong, songDurationMs } from "./neon-keys-songs.ts";
+
 export const CHALLENGE_MS = 60_000;
 export const HIT_LINE = 0.86;
 export type PianoPhase = "ready" | "playing" | "paused" | "gameover" | "complete";
@@ -5,6 +7,9 @@ export type Judgement = "idle" | "perfect" | "good" | "miss";
 export type FallingNote = { id: number; key: number; progress: number };
 export type PianoRun = {
   phase: PianoPhase;
+  songId: string;
+  elapsedMs: number;
+  chartIndex: number;
   notes: FallingNote[];
   remainingMs: number;
   spawnMs: number;
@@ -20,15 +25,17 @@ export type PianoRun = {
   nextId: number;
 };
 
-const randomStep = (seed: number) => {
-  const next = (Math.imul(seed || 1, 1664525) + 1013904223) >>> 0;
-  return { seed: next, value: next / 4294967296 };
-};
 
-export const createPianoRun = (seed = Date.now()): PianoRun => ({
-  phase: "ready",
+export const createPianoRun = (songOrSeed: string | number = "ode-to-joy"): PianoRun => {
+  const song = getPianoSong(typeof songOrSeed === "string" ? songOrSeed : undefined);
+  const seed = typeof songOrSeed === "number" ? songOrSeed : Date.now();
+  return {
+    phase: "ready",
+    songId: song.id,
+    elapsedMs: 0,
+    chartIndex: 0,
   notes: [],
-  remainingMs: CHALLENGE_MS,
+  remainingMs: songDurationMs(song),
   spawnMs: 250,
   score: 0,
   combo: 0,
@@ -40,7 +47,8 @@ export const createPianoRun = (seed = Date.now()): PianoRun => ({
   judgement: "idle",
   seed: seed >>> 0,
   nextId: 1,
-});
+  };
+};
 
 export const startPianoRun = (run: PianoRun): PianoRun =>
   run.phase === "ready" ? { ...run, phase: "playing" } : run;
@@ -48,38 +56,38 @@ export const startPianoRun = (run: PianoRun): PianoRun =>
 export const togglePianoPause = (run: PianoRun): PianoRun =>
   run.phase === "playing" ? { ...run, phase: "paused" } : run.phase === "paused" ? { ...run, phase: "playing" } : run;
 
-const spawnInterval = (remainingMs: number) => {
-  const progress = 1 - remainingMs / CHALLENGE_MS;
-  return Math.max(280, 620 - progress * 260);
-};
+const NOTE_TRAVEL_MS = 2_400;
 
 export const tickPianoRun = (run: PianoRun, elapsedMs: number): PianoRun => {
   if (run.phase !== "playing" || !Number.isFinite(elapsedMs) || elapsedMs <= 0) return run;
   const dt = Math.min(CHALLENGE_MS, elapsedMs);
   const remainingMs = Math.max(0, run.remainingMs - dt);
-  const elapsedProgress = 1 - remainingMs / CHALLENGE_MS;
-  const speed = 0.00034 + elapsedProgress * 0.00017;
-  let notes = run.notes.map((note) => ({ ...note, progress: note.progress + dt * speed }));
+  const nextElapsedMs = run.elapsedMs + dt;
+  let notes = run.notes.map((note) => ({ ...note, progress: note.progress + dt / NOTE_TRAVEL_MS }));
   const missed = notes.filter((note) => note.progress > 1).length;
   notes = notes.filter((note) => note.progress <= 1);
   const lives = Math.max(0, run.lives - missed);
-  let spawnMs = run.spawnMs - dt;
-  let seed = run.seed;
   let nextId = run.nextId;
-  while (spawnMs <= 0 && remainingMs > 0) {
-    const random = randomStep(seed);
-    seed = random.seed;
-    notes.push({ id: nextId++, key: Math.floor(random.value * 12), progress: 0 });
-    spawnMs += spawnInterval(remainingMs);
+  let chartIndex = run.chartIndex;
+  const song = getPianoSong(run.songId);
+  while (
+    chartIndex < song.chart.length &&
+    song.chart[chartIndex].beat * 60_000 / song.bpm <= nextElapsedMs
+  ) {
+    const scheduledMs = song.chart[chartIndex].beat * 60_000 / song.bpm;
+    notes.push({ id: nextId++, key: song.chart[chartIndex].key, progress: Math.max(0, (nextElapsedMs - scheduledMs) / NOTE_TRAVEL_MS) });
+    chartIndex += 1;
   }
-  const phase = lives <= 0 ? "gameover" : remainingMs <= 0 ? "complete" : run.phase;
+  const completed = remainingMs <= 0 && chartIndex === song.chart.length;
+  if (completed) notes = [];
+  const phase = lives <= 0 ? "gameover" : completed ? "complete" : run.phase;
   return {
     ...run,
     phase,
     notes,
     remainingMs,
-    spawnMs,
-    seed,
+    elapsedMs: nextElapsedMs,
+    chartIndex,
     nextId,
     lives,
     combo: missed ? 0 : run.combo,

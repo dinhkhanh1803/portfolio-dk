@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import NeonKeysGame from "./neon-keys-game";
+import NeonKeysGame from "./neon-keys-song-game";
 
 export const metadata: Metadata = {
   title: "Neon Keys — Piano Rush",

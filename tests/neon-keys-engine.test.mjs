@@ -13,7 +13,7 @@ test("creates a deterministic ready piano challenge", () => {
   const run = createPianoRun(42);
   assert.equal(run.phase, "ready");
   assert.equal(run.lives, 5);
-  assert.equal(run.remainingMs, CHALLENGE_MS);
+  assert.ok(run.remainingMs > 5_000 && run.remainingMs <= CHALLENGE_MS);
   assert.deepEqual(createPianoRun(42), run);
 });
 
