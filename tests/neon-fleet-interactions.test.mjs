@@ -3,7 +3,8 @@ import "./support/neon-fleet-tsx-hooks.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { JSDOM } from "jsdom";
 
 const [
@@ -322,16 +323,30 @@ test("terminal persistence writes once per run and exactly once again after rema
   }
 });
 
-test("game uses the existing document theme on its first client render", async () => {
+test("game hydrates server markup before transitioning to the document theme", async () => {
+  const serverMarkup = renderToString(gameElement());
+  assert.match(serverMarkup, /class="page light"/);
+
   const environment = installDom({ dark: true });
   installWindowTimers(window);
-  const view = await mount(gameElement());
+  const container = document.createElement("div");
+  container.innerHTML = serverMarkup;
+  document.body.append(container);
+  const recoverableErrors = [];
+  let root;
   try {
-    const main = view.container.querySelector("main");
+    await act(async () => {
+      root = hydrateRoot(container, gameElement(), {
+        onRecoverableError: (error) => recoverableErrors.push(error),
+      });
+    });
+    const main = container.querySelector("main");
     assert.match(main.className, /\bdark\b/);
     assert.doesNotMatch(main.className, /\blight\b/);
+    assert.deepEqual(recoverableErrors, []);
   } finally {
-    await view.cleanup();
+    if (root) await act(async () => { root.unmount(); });
+    container.remove();
     environment.cleanup();
   }
 });

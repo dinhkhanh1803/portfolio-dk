@@ -118,7 +118,7 @@ export default function NeonFleetGame() {
   const [previewOrigin, setPreviewOrigin] = useState<Cell | null>(null);
   const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [theme, setTheme] = useState<Theme>(readDocumentTheme);
+  const [theme, setTheme] = useState<Theme>("light");
   const [stats, setStats] = useState<FleetStats>(DEFAULT_STATS);
   const [eventLog, setEventLog] = useState<LogEntry[]>([]);
   const [announcement, setAnnouncement] = useState("Place your fleet to begin.");
@@ -198,11 +198,11 @@ export default function NeonFleetGame() {
     const storedStats = parseStats(safeRead(STATS_KEY));
     const storedMute = safeRead(MUTE_KEY) === "true";
     const readTheme = () => setTheme(readDocumentTheme());
+    readTheme();
     audioRef.current.setMuted(storedMute);
     const hydrateTimer = window.setTimeout(() => {
       setStats(storedStats);
       setMuted(storedMute);
-      readTheme();
     }, 0);
     const observer = new MutationObserver(readTheme);
     observer.observe(document.documentElement, {
