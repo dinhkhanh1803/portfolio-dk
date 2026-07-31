@@ -39,7 +39,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent" | "fleet";
+  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent" | "fleet" | "blocks";
 };
 
 const featureIcons = {
@@ -204,6 +204,22 @@ export default function PlaygroundPage() {
       ],
       visual: "fleet",
     },
+    {
+      slug: "neon-blocks",
+      href: "/playground/neon-blocks",
+      title: "Neon Blocks",
+      categories: ["Arcade", "Puzzle", "Skill", "Endless"],
+      categoryLabel: "ARCADE · TETRIS · PUZZLE · ENDLESS",
+      description: language === "vi"
+        ? "Xếp khối, săn combo và tăng tốc qua từng cấp với ghost piece, hold và hệ thống 7-bag chuẩn."
+        : "Stack blocks, chase combos, and accelerate through levels with ghost pieces, hold, and a true 7-bag.",
+      features: [
+        { icon: "grid", label: "Classic 10×20" },
+        { icon: "zap", label: "Combo + levels" },
+        { icon: "controls", label: "Touch + Keyboard" },
+      ],
+      visual: "blocks",
+    },
   ];
 
   const normalized = query.trim().toLowerCase();
@@ -264,7 +280,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : game.visual === "fleet" ? styles.fleetVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : game.visual === "fleet" ? styles.fleetVisual : game.visual === "blocks" ? styles.blocksVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -308,6 +324,13 @@ export default function PlaygroundPage() {
                     <i className={styles.siegeEnemyOne} />
                     <i className={styles.siegeEnemyTwo} />
                     <b>WAVE 08</b>
+                  </div>
+                ) : game.visual === "blocks" ? (
+                  <div className={styles.visualBlocks}>
+                    {[0, 1, 0, 2, 1, 1, 2, 2, 3, 3, 4, 2, 3, 4, 4, 4, 5, 5, 5, 0, 0, 6, 6, 6].map((tone, index) => (
+                      <i data-tone={tone || undefined} key={index} />
+                    ))}
+                    <strong>LEVEL 09</strong>
                   </div>
                 ) : game.visual === "fleet" ? (
                   <div className={styles.visualFleet}>
