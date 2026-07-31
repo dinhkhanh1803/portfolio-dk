@@ -709,3 +709,31 @@
 
 .visualFleet i::before,
 .visualFleet i::after { content: ""; position: absolute; background: #ff7188; }
+
+.visualFleet i::before {
+  width: 2px;
+  height: calc(100% + 14px);
+  inset-block: -7px;
+  left: calc(50% - 1px);
+}
+
+.visualFleet i::after {
+  width: calc(100% + 14px);
+  height: 2px;
+  inset-inline: -7px;
+  top: calc(50% - 1px);
+}
+
+@keyframes fleetSweep {
+  0% {
+    transform: translateX(0) rotate(18deg);
+  }
+
+  55%,
+  100% {
+    transform: translateX(450%) rotate(18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visualFleet::after { animation: none; }

@@ -193,10 +193,30 @@ test("Playground exposes Neon Fleet as the eighth live game", async () => {
     "utf8",
   );
 
-  assert.match(page, /\/playground\/neon-fleet/);
-  assert.match(page, /Neon Fleet/);
-  assert.match(page, /visual:\s*"fleet"/);
+  const gamesBlock = page.match(/const games:\s*GameCard\[\]\s*=\s*\[([\s\S]*?)\n  \];/)?.[1] ?? "";
+  const fleetBlock = gamesBlock.match(/\{\s*slug:\s*"neon-fleet",[\s\S]*?\n    \},/)?.[0] ?? "";
+
+  assert.equal((gamesBlock.match(/\bslug:\s*"/g) ?? []).length, 8);
+  assert.match(fleetBlock, /href:\s*"\/playground\/neon-fleet"/);
+  assert.match(fleetBlock, /title:\s*"Neon Fleet"/);
+  assert.match(fleetBlock, /categories:\s*\["Strategy",\s*"Casual"\]/);
+  assert.match(fleetBlock, /categoryLabel:\s*"STRATEGY · BATTLESHIP · CLASSIC"/);
+  assert.match(
+    fleetBlock,
+    /Đặt đội tàu, đọc tín hiệu radar và đánh chìm hạm đội AI qua ba cấp độ\./,
+  );
+  assert.match(
+    fleetBlock,
+    /Place your ships, read the radar, and sink the AI fleet across three difficulties\./,
+  );
+  assert.match(fleetBlock, /\{ icon:\s*"brain",\s*label:\s*"3 AI levels"\s*\}/);
+  assert.match(fleetBlock, /\{ icon:\s*"grid",\s*label:\s*"Classic 10×10"\s*\}/);
+  assert.match(fleetBlock, /\{ icon:\s*"audio",\s*label:\s*"Web Audio"\s*\}/);
+  assert.match(fleetBlock, /visual:\s*"fleet"/);
   assert.match(css, /\.visualFleet/);
+  assert.match(css, /@keyframes\s+fleetSweep/);
+  assert.match(css, /\.visualFleet i::after\s*\{[^}]*height:\s*2px;[^}]*inset-inline:/);
+  assert.match(css, /\.visualFleet i::before\s*\{[^}]*width:\s*2px;[^}]*inset-block:/);
 });
 
 test("scoped styles provide responsive themes, focus, motion, and shot presentation", async () => {
