@@ -1,0 +1,169 @@
+import type { Difficulty } from "./neon-fleet-data.ts";
+
+export type DifficultyStats = {
+  played: number;
+  won: number;
+  bestAccuracy: number;
+  fastestVictoryMs: number | null;
+};
+
+export type FleetStats = {
+  version: 1;
+  byDifficulty: Record<Difficulty, DifficultyStats>;
+};
+
+export const STATS_KEY = "dk-neon-fleet-stats-v1";
+export const MUTE_KEY = "dk-neon-fleet-muted";
+
+const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
+
+const emptyDifficulty = (): DifficultyStats => ({
+  played: 0,
+  won: 0,
+  bestAccuracy: 0,
+  fastestVictoryMs: null,
+});
+
+const createDefaultStats = (): FleetStats => ({
+  version: 1,
+  byDifficulty: {
+    easy: emptyDifficulty(),
+    normal: emptyDifficulty(),
+    hard: emptyDifficulty(),
+  },
+});
+
+const freezeStats = (stats: FleetStats): FleetStats => {
+  Object.freeze(stats.byDifficulty.easy);
+  Object.freeze(stats.byDifficulty.normal);
+  Object.freeze(stats.byDifficulty.hard);
+  Object.freeze(stats.byDifficulty);
+  return Object.freeze(stats);
+};
+
+export const DEFAULT_STATS: FleetStats = freezeStats(createDefaultStats());
+
+const isDifficulty = (value: unknown): value is Difficulty =>
+  typeof value === "string" && DIFFICULTIES.includes(value as Difficulty);
+
+const isDifficultyStats = (value: unknown): value is DifficultyStats => {
+  if (!value || typeof value !== "object") return false;
+  const stats = value as DifficultyStats;
+  return Number.isSafeInteger(stats.played)
+    && stats.played >= 0
+    && Number.isSafeInteger(stats.won)
+    && stats.won >= 0
+    && stats.won <= stats.played
+    && Number.isFinite(stats.bestAccuracy)
+    && stats.bestAccuracy >= 0
+    && stats.bestAccuracy <= 100
+    && (stats.played !== 0 || (stats.won === 0 && stats.bestAccuracy === 0 && stats.fastestVictoryMs === null))
+    && (stats.won === 0
+      ? stats.fastestVictoryMs === null
+      : typeof stats.fastestVictoryMs === "number" && Number.isFinite(stats.fastestVictoryMs) && stats.fastestVictoryMs > 0);
+};
+
+const isFleetStats = (value: unknown): value is FleetStats => {
+  if (!value || typeof value !== "object") return false;
+  const stats = value as FleetStats;
+  return stats.version === 1
+    && Boolean(stats.byDifficulty)
+    && typeof stats.byDifficulty === "object"
+    && DIFFICULTIES.every((difficulty) => isDifficultyStats(stats.byDifficulty[difficulty]));
+};
+
+const copyDifficulty = (stats: DifficultyStats): DifficultyStats => ({
+  played: stats.played,
+  won: stats.won,
+  bestAccuracy: stats.bestAccuracy,
+  fastestVictoryMs: stats.fastestVictoryMs,
+});
+
+const copyStats = (stats: FleetStats): FleetStats => ({
+  version: 1,
+  byDifficulty: {
+    easy: copyDifficulty(stats.byDifficulty.easy),
+    normal: copyDifficulty(stats.byDifficulty.normal),
+    hard: copyDifficulty(stats.byDifficulty.hard),
+  },
+});
+
+export const parseStats = (raw: string | null): FleetStats => {
+  try {
+    const parsed: unknown = JSON.parse(raw ?? "");
+    return isFleetStats(parsed) ? copyStats(parsed) : createDefaultStats();
+  } catch {
+    return createDefaultStats();
+  }
+};
+
+type MatchResult = {
+  won: boolean;
+  accuracy: number;
+  durationMs: number;
+};
+
+const isMatchResult = (value: unknown): value is MatchResult => {
+  if (!value || typeof value !== "object") return false;
+  const result = value as MatchResult;
+  return typeof result.won === "boolean"
+    && Number.isFinite(result.accuracy)
+    && Number.isFinite(result.durationMs)
+    && (!result.won || result.durationMs > 0);
+};
+
+const boundedAccuracy = (accuracy: number) => Math.min(100, Math.max(0, Math.round(accuracy)));
+
+export const recordMatch = (
+  stats: FleetStats,
+  difficulty: Difficulty,
+  result: MatchResult,
+): FleetStats => {
+  if (!isFleetStats(stats) || !isDifficulty(difficulty) || !isMatchResult(result)) return stats;
+
+  const current = stats.byDifficulty[difficulty];
+  const duration = result.won ? result.durationMs : null;
+  const updated = {
+    played: current.played + 1,
+    won: current.won + (result.won ? 1 : 0),
+    bestAccuracy: Math.max(current.bestAccuracy, boundedAccuracy(result.accuracy)),
+    fastestVictoryMs: duration === null
+      ? current.fastestVictoryMs
+      : Math.min(current.fastestVictoryMs ?? duration, duration),
+  };
+  return {
+    version: 1,
+    byDifficulty: {
+      easy: difficulty === "easy" ? updated : stats.byDifficulty.easy,
+      normal: difficulty === "normal" ? updated : stats.byDifficulty.normal,
+      hard: difficulty === "hard" ? updated : stats.byDifficulty.hard,
+    },
+  };
+};
+
+const browserStorage = (): Storage | null => {
+  try {
+    return typeof window === "undefined" ? null : window.localStorage;
+  } catch {
+    return null;
+  }
+};
+
+export const safeRead = (key: string): string | null => {
+  try {
+    return browserStorage()?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
+};
+
+export const safeWrite = (key: string, value: string): boolean => {
+  try {
+    const storage = browserStorage();
+    if (!storage) return false;
+    storage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+};

@@ -39,7 +39,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent";
+  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent" | "fleet";
 };
 
 const featureIcons = {
@@ -188,6 +188,22 @@ export default function PlaygroundPage() {
       ],
       visual: "serpent",
     },
+    {
+      slug: "neon-fleet",
+      href: "/playground/neon-fleet",
+      title: "Neon Fleet",
+      categories: ["Strategy", "Casual"],
+      categoryLabel: "STRATEGY · BATTLESHIP · CLASSIC",
+      description: language === "vi"
+        ? "Đặt đội tàu, đọc tín hiệu radar và đánh chìm hạm đội AI qua ba cấp độ."
+        : "Place your ships, read the radar, and sink the AI fleet across three difficulties.",
+      features: [
+        { icon: "brain", label: "3 AI levels" },
+        { icon: "grid", label: "Classic 10×10" },
+        { icon: "audio", label: "Web Audio" },
+      ],
+      visual: "fleet",
+    },
   ];
 
   const normalized = query.trim().toLowerCase();
@@ -248,7 +264,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : game.visual === "fleet" ? styles.fleetVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -292,6 +308,13 @@ export default function PlaygroundPage() {
                     <i className={styles.siegeEnemyOne} />
                     <i className={styles.siegeEnemyTwo} />
                     <b>WAVE 08</b>
+                  </div>
+                ) : game.visual === "fleet" ? (
+                  <div className={styles.visualFleet}>
+                    <span />
+                    <span />
+                    <span />
+                    <i />
                   </div>
                 ) : (
                   <div className={styles.serpentPreview}>
