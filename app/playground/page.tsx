@@ -23,6 +23,8 @@ const categories = [
   "Endless",
   "Skill",
   "Puzzle",
+  "Brain",
+  "Memory",
   "Strategy",
   "Casual",
   "Multiplayer",
@@ -39,7 +41,7 @@ type GameCard = {
   categoryLabel: string;
   description: string;
   features: Array<{ icon: FeatureIcon; label: string }>;
-  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent" | "fleet" | "blocks" | "invaders";
+  visual: "pulse" | "foundry" | "hopper" | "pong" | "breaker" | "siege" | "serpent" | "fleet" | "blocks" | "invaders" | "echo";
 };
 
 const featureIcons = {
@@ -236,6 +238,22 @@ export default function PlaygroundPage() {
       ],
       visual: "invaders",
     },
+    {
+      slug: "echo-circuit",
+      href: "/playground/echo-circuit",
+      title: "Echo Circuit",
+      categories: ["Brain", "Memory", "Casual", "Skill"],
+      categoryLabel: "BRAIN · SOUND MEMORY · CASUAL",
+      description: language === "vi"
+        ? "Nghe, ghi nhớ và phát lại chuỗi âm neon khi nhịp độ tăng nhanh qua từng vòng."
+        : "Listen, remember, and replay the neon tone sequence as the tempo rises each round.",
+      features: [
+        { icon: "brain", label: "Endless sequences" },
+        { icon: "audio", label: "Web Audio tones" },
+        { icon: "controls", label: "Touch + Keyboard" },
+      ],
+      visual: "echo",
+    },
   ];
 
   const normalized = query.trim().toLowerCase();
@@ -296,7 +314,7 @@ export default function PlaygroundPage() {
           {visibleGames.map((game) => (
             <article className={styles.gameCard} key={game.slug}>
               <div
-                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : game.visual === "fleet" ? styles.fleetVisual : game.visual === "blocks" ? styles.blocksVisual : game.visual === "invaders" ? styles.invadersVisual : ""}`}
+                className={`${styles.visual} ${game.visual === "foundry" ? styles.foundryVisual : game.visual === "hopper" ? styles.hopperVisual : game.visual === "pong" ? styles.pongVisual : game.visual === "breaker" ? styles.breakerVisual : game.visual === "siege" ? styles.siegeVisual : game.visual === "serpent" ? styles.serpentVisual : game.visual === "fleet" ? styles.fleetVisual : game.visual === "blocks" ? styles.blocksVisual : game.visual === "invaders" ? styles.invadersVisual : game.visual === "echo" ? styles.echoVisual : ""}`}
                 aria-hidden="true"
               >
                 <span className={styles.liveBadge}>LIVE</span>
@@ -340,6 +358,13 @@ export default function PlaygroundPage() {
                     <i className={styles.siegeEnemyOne} />
                     <i className={styles.siegeEnemyTwo} />
                     <b>WAVE 08</b>
+                  </div>
+                ) : game.visual === "echo" ? (
+                  <div className={styles.visualEcho}>
+                    <i /><i /><i /><i />
+                    <span>♪</span>
+                    <b>01 · 02 · 03 · 04</b>
+                    <em />
                   </div>
                 ) : game.visual === "invaders" ? (
                   <div className={styles.visualInvaders}>
