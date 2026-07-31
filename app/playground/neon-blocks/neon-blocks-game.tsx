@@ -108,10 +108,10 @@ export default function NeonBlocksGame() {
 
   useEffect(() => {
     const syncTheme = () =>
-      setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+      setTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light");
     syncTheme();
     const observer = new MutationObserver(syncTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     const loadBest = window.setTimeout(() => {
       const stored = Number(window.localStorage.getItem(BEST_KEY));
       if (Number.isSafeInteger(stored) && stored >= 0) setStoredBest(stored);
@@ -202,7 +202,7 @@ export default function NeonBlocksGame() {
   const overlay = game.phase === "ready" || game.phase === "paused" || game.phase === "gameover";
 
   return (
-    <main className={`${styles.page} ${styles[theme]}`}>
+    <main className={`${styles.page} ${theme === "light" ? styles.light : ""}`}>
       <section className={styles.shell}>
         <header className={styles.hero}>
           <div>

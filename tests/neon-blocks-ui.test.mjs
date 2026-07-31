@@ -16,6 +16,8 @@ test("Neon Blocks UI exposes controls, board, hold, queue, score, audio, and the
   for (const token of ["hardDrop", "holdPiece", "rotatePiece", "getGhostY", "MutationObserver", "AudioContext", "localStorage"]) {
     assert.match(game, new RegExp(token));
   }
+  assert.match(game, /getAttribute\("data-theme"\) === "dark"/);
+  assert.match(game, /attributeFilter: \["data-theme"\]/);
   assert.match(css, /\.board/);
   assert.match(css, /\.touchControls/);
   assert.match(css, /\.page\.light/);
