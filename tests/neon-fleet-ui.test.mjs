@@ -219,6 +219,28 @@ test("Playground exposes Neon Fleet as the eighth live game", async () => {
   assert.match(css, /\.visualFleet i::before\s*\{[^}]*width:\s*2px;[^}]*inset-block:/);
 });
 
+test("Playground card stylesheet closes every CSS block", async () => {
+  const css = await readFile(
+    new URL("../app/playground/playground.module.css", import.meta.url),
+    "utf8",
+  );
+  const structuralCss = css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
+  let depth = 0;
+
+  for (const [index, token] of [...structuralCss].entries()) {
+    if (token === "{") depth += 1;
+    if (token === "}") depth -= 1;
+    assert.ok(
+      depth >= 0,
+      `unexpected closing CSS block near character ${index}`,
+    );
+  }
+
+  assert.equal(depth, 0, `expected balanced CSS blocks, found depth ${depth}`);
+});
+
 test("scoped styles provide responsive themes, focus, motion, and shot presentation", async () => {
   const source = await readFile(
     new URL("../app/playground/neon-fleet/neon-fleet.module.css", import.meta.url),
